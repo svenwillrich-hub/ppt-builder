@@ -1,0 +1,32 @@
+[
+  {
+    "id": "capco",
+    "name": "Capco Style",
+    "instruction": "Use the capco-slides skill. Teal accents, Century Gothic typography, high-density content grids.",
+    "enabled": true
+  },
+  {
+    "id": "consulting",
+    "name": "Consulting Classic",
+    "instruction": "Use the consulting-pptx skill. Visualization-heavy, framework diagrams, McKinsey style.",
+    "enabled": true
+  },
+  {
+    "id": "minimal",
+    "name": "Minimal Clean",
+    "instruction": "Minimalist design. Lots of whitespace, clean typography, max 3 bullet points per slide.",
+    "enabled": true
+  },
+  {
+    "id": "data-heavy",
+    "name": "Data-Driven",
+    "instruction": "Focus on charts, tables, and data visualizations. Every slide needs a quantitative statement.",
+    "enabled": false
+  },
+  {
+    "id": "executive",
+    "name": "Executive Summary",
+    "instruction": "Max 10 slides. Each slide has a clear key message as the title. Appendix for details.",
+    "enabled": false
+  }
+]

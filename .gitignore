@@ -1,0 +1,34 @@
+# Auto-generated outputs
+outputs/*.pptx
+previews/
+
+# User uploads
+uploads/*
+!uploads/.gitkeep
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Claude Code local settings
+.claude/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
