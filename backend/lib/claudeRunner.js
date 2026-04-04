@@ -22,7 +22,8 @@ class ClaudeRunner {
     const promptSize = Buffer.byteLength(prompt, 'utf-8');
     console.log(`[claude] Starting CLI — prompt size: ${(promptSize / 1024).toFixed(1)} KB, temp file: ${tmpFile}`);
 
-    const shellCmd = `cat "${tmpFile}" | claude --dangerously-skip-permissions --output-format stream-json --verbose -p -`;
+    // Pipe prompt via stdin, redirect stdin from file (not cat pipe) to keep stdin open
+    const shellCmd = `claude --dangerously-skip-permissions --output-format stream-json --verbose -p - < "${tmpFile}"`;
 
     const child = spawn('sh', ['-c', shellCmd], {
       env: process.env,
@@ -121,7 +122,10 @@ class ClaudeRunner {
     });
 
     child.on('close', (code, signal) => {
-      console.log(`[claude] Process ended — code: ${code}, signal: ${signal}, output size: ${textOutput.length} chars`);
+      const elapsed = Math.round((Date.now() - Date.now()) / 1000);
+      console.log(`[claude] Process ended — code: ${code}, signal: ${signal}, textOutput: ${textOutput.length} chars, rawOutput: ${output.length} chars`);
+      // Log last 200 chars of output for debugging
+      console.log(`[claude] Last output: ${textOutput.slice(-200)}`);
       // Clean up temp file
       try { fs.unlinkSync(tmpFile); } catch (e) { /* ignore */ }
 
@@ -157,7 +161,7 @@ class ClaudeRunner {
       const tmpFile = path.join(os.tmpdir(), `claude-prompt-${Date.now()}.txt`);
       fs.writeFileSync(tmpFile, prompt, 'utf-8');
 
-      const shellCmd = `cat "${tmpFile}" | claude --dangerously-skip-permissions --output-format text -p -`;
+      const shellCmd = `claude --dangerously-skip-permissions --output-format text -p - < "${tmpFile}"`;
 
       const child = spawn('sh', ['-c', shellCmd], {
         env: process.env,
