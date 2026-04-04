@@ -1,123 +1,262 @@
-/* === PPTX Creator — Frontend Application === */
-
 (function () {
   'use strict';
-
   const API = '/api';
 
-  // --- Color palettes (PPT-style with 6 theme colors each) ---
   const PALETTES = [
-    { id: 'office',       name: 'Office',         colors: ['#4472C4','#ED7D31','#A5A5A5','#FFC000','#5B9BD5','#70AD47'], accent: '#4472C4', accentHover: '#3560a8', accentLight: '#e8eef8' },
-    { id: 'blue-warm',    name: 'Blue Warm',       colors: ['#4A66AC','#629DD1','#297FD5','#7F8FA9','#5AA2AE','#9D90A0'], accent: '#4A66AC', accentHover: '#3b5491', accentLight: '#eaedF5' },
-    { id: 'blue',         name: 'Blue',            colors: ['#0F6FC6','#009DD9','#0BD0D9','#10CF9B','#7CCA62','#A5C249'], accent: '#0F6FC6', accentHover: '#0b5aa3', accentLight: '#e5f0fa' },
-    { id: 'blue-green',   name: 'Blue Green',      colors: ['#3494BA','#58B6C0','#75BDA7','#7A8C8E','#84ACB6','#2683C6'], accent: '#3494BA', accentHover: '#2a7a9a', accentLight: '#e7f3f7' },
-    { id: 'green',        name: 'Green',           colors: ['#549E39','#8AB833','#C0CF3A','#029676','#4AB5C4','#0989B1'], accent: '#549E39', accentHover: '#44822e', accentLight: '#edf5ea' },
-    { id: 'orange',       name: 'Orange',          colors: ['#E48312','#BD582C','#865640','#9B8357','#C2BC80','#94A088'], accent: '#E48312', accentHover: '#c46f0e', accentLight: '#fdf1e3' },
-    { id: 'red-orange',   name: 'Red Orange',      colors: ['#D34817','#9B2D1F','#A28E6A','#956251','#918485','#855D5D'], accent: '#D34817', accentHover: '#b03c12', accentLight: '#fae9e4' },
-    { id: 'red',          name: 'Red',             colors: ['#A5300F','#D55816','#E19825','#B19C7D','#7F6C6C','#6E4B4B'], accent: '#A5300F', accentHover: '#88270c', accentLight: '#f5e6e3' },
-    { id: 'violet',       name: 'Violet',          colors: ['#7E32CB','#AD40E8','#D164FF','#A48CC2','#8C7BAF','#6654A0'], accent: '#7E32CB', accentHover: '#6828a8', accentLight: '#f1e8fa' },
-    { id: 'grayscale',    name: 'Grayscale',       colors: ['#595959','#808080','#A6A6A6','#BFBFBF','#D9D9D9','#404040'], accent: '#595959', accentHover: '#404040', accentLight: '#efefef' },
-    { id: 'paper',        name: 'Paper',           colors: ['#A5AB81','#D8B25C','#7BA79D','#968C8C','#F2D19F','#B5A28D'], accent: '#A5AB81', accentHover: '#8c9268', accentLight: '#f2f3ed' },
-    { id: 'median',       name: 'Median',          colors: ['#94B6D2','#DD8047','#A5AB81','#D8B25C','#7BA79D','#968C8C'], accent: '#94B6D2', accentHover: '#7a9fbd', accentLight: '#eef4f8' }
+    {
+      id: 'office',
+      name: 'Office',
+      colors: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47'],
+      accent: '#4472C4',
+      accentHover: '#3A62A8',
+      accentLight: '#D6E4F0'
+    },
+    {
+      id: 'blue-warm',
+      name: 'Blue Warm',
+      colors: ['#4A66AC', '#629DD1', '#297FD5', '#7F8FA9', '#5AA2AE', '#9D90A0'],
+      accent: '#4A66AC',
+      accentHover: '#3D5691',
+      accentLight: '#D4DAE9'
+    },
+    {
+      id: 'blue',
+      name: 'Blue',
+      colors: ['#0F6FC6', '#009DD9', '#0BD0D9', '#10CF9B', '#7CCA62', '#A5C249'],
+      accent: '#0F6FC6',
+      accentHover: '#0C5DA6',
+      accentLight: '#CCE0F4'
+    },
+    {
+      id: 'blue-green',
+      name: 'Blue Green',
+      colors: ['#3494BA', '#58B6C0', '#75BDA7', '#7A8C8E', '#84ACB6', '#2683C6'],
+      accent: '#3494BA',
+      accentHover: '#2B7D9D',
+      accentLight: '#D0E6EF'
+    },
+    {
+      id: 'green',
+      name: 'Green',
+      colors: ['#549E39', '#8AB833', '#C0CF3A', '#029676', '#4AB5C4', '#0989B1'],
+      accent: '#549E39',
+      accentHover: '#47862F',
+      accentLight: '#D6EACE'
+    },
+    {
+      id: 'orange',
+      name: 'Orange',
+      colors: ['#E48312', '#BD582C', '#865640', '#9B8357', '#C2BC80', '#94A088'],
+      accent: '#E48312',
+      accentHover: '#C4700F',
+      accentLight: '#F8E1BF'
+    },
+    {
+      id: 'red-orange',
+      name: 'Red Orange',
+      colors: ['#D34817', '#9B2D1F', '#A28E6A', '#956251', '#918485', '#855D5D'],
+      accent: '#D34817',
+      accentHover: '#B43D14',
+      accentLight: '#F4D1C4'
+    },
+    {
+      id: 'red',
+      name: 'Red',
+      colors: ['#A5300F', '#D55816', '#E19825', '#B19049', '#7F6C58', '#6B5B45'],
+      accent: '#A5300F',
+      accentHover: '#8C290D',
+      accentLight: '#EACCC5'
+    },
+    {
+      id: 'violet',
+      name: 'Violet',
+      colors: ['#AD84C6', '#8784C7', '#5D739A', '#6997AF', '#84ACB6', '#6F8183'],
+      accent: '#AD84C6',
+      accentHover: '#9A6FB6',
+      accentLight: '#E8DDF0'
+    },
+    {
+      id: 'grayscale',
+      name: 'Grayscale',
+      colors: ['#595959', '#808080', '#999999', '#B2B2B2', '#CCCCCC', '#D9D9D9'],
+      accent: '#595959',
+      accentHover: '#404040',
+      accentLight: '#E8E8E8'
+    },
+    {
+      id: 'paper',
+      name: 'Paper',
+      colors: ['#A5B592', '#F3A447', '#E7BC29', '#D092A7', '#9C85C0', '#809EC2'],
+      accent: '#A5B592',
+      accentHover: '#8FA17C',
+      accentLight: '#E4EBE0'
+    },
+    {
+      id: 'median',
+      name: 'Median',
+      colors: ['#94B6D2', '#DD8047', '#A5AB81', '#D8B25C', '#7BA79D', '#968C8C'],
+      accent: '#94B6D2',
+      accentHover: '#7DA3C3',
+      accentLight: '#DDE8F1'
+    }
   ];
 
   const DEFAULT_INSTRUCTIONS = `Create top-notch consulting slides following these principles:
 - Every slide must have a clear action title (key takeaway as the headline)
 - Use the Pyramid Principle: lead with the conclusion, support with evidence
-- Include quantitative data points wherever possible (stats, percentages, benchmarks)
-- Suggest high-impact visuals: 2x2 matrices, process flows, waterfall charts, comparison tables
+- Include quantitative data points wherever possible
+- Suggest high-impact visuals: 2x2 matrices, process flows, waterfall charts
 - Keep text concise: max 5 bullet points per slide, each under 15 words
 - Include a clear narrative arc: Situation > Complication > Resolution
 - Add source citations for all data claims`;
 
-  // --- State ---
+  const FONTS = [
+    { name: 'Calibri', desc: 'Modern sans-serif, Office default' },
+    { name: 'Arial', desc: 'Classic sans-serif, universal' },
+    { name: 'Helvetica', desc: 'Swiss precision, clean' },
+    { name: 'Century Gothic', desc: 'Geometric, consulting style' },
+    { name: 'Segoe UI', desc: 'Microsoft system font' },
+    { name: 'Roboto', desc: 'Google\'s versatile sans' },
+    { name: 'Open Sans', desc: 'Friendly, highly readable' },
+    { name: 'Lato', desc: 'Warm, professional' },
+    { name: 'Montserrat', desc: 'Bold geometric headers' },
+    { name: 'Poppins', desc: 'Geometric, modern feel' },
+    { name: 'Source Sans Pro', desc: 'Adobe\'s open sans-serif' },
+    { name: 'Nunito', desc: 'Rounded, approachable' },
+    { name: 'Raleway', desc: 'Elegant display font' },
+    { name: 'Georgia', desc: 'Classic serif, screen-optimized' },
+    { name: 'Garamond', desc: 'Traditional serif, print quality' },
+    { name: 'Times New Roman', desc: 'Academic serif standard' },
+    { name: 'Playfair Display', desc: 'High-contrast editorial serif' },
+    { name: 'Merriweather', desc: 'Serif designed for screens' },
+    { name: 'Inter', desc: 'UI-optimized variable font' },
+    { name: 'Work Sans', desc: 'Clean, optimized for body text' }
+  ];
+
   const state = {
     currentStep: 1,
     highestStep: 1,
     language: 'english',
     styles: [],
+    skills: [],
     uploadedFiles: [],
-    revisionFiles: [],
     slides: [],
     slideComments: {},
-    slidePreviewUrls: [],
-    modalSlideIndex: 0,
     generatedFilename: null,
     revisions: [],
     revisionCount: 0,
     activeRequestId: null,
+    slidePreviewUrls: [],
+    modalSlideIndex: 0,
     refineInstructions: '',
-    // Timing
-    timings: { analyze: 0, outline: 0, generate: 0, total: 0 },
-    stepStartTime: null,
     analyzeTimer: null,
     analyzeSeconds: 0,
     genTimer: null,
     genSeconds: 0,
-    palette: 'indigo'
+    timings: { analyze: 0, outline: 0, generate: 0, total: 0 },
+    stepStartTime: null,
+    palette: 'office',
+    font: 'Calibri',
+    customizeColorsFont: false,
+    lastStatusIdx: -1
   };
 
-  const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => [...document.querySelectorAll(sel)];
+  const $ = function (sel) { return document.querySelector(sel); };
+  const $$ = function (sel) { return [...document.querySelectorAll(sel)]; };
 
-  // --- Init ---
-  document.addEventListener('DOMContentLoaded', () => {
+  // === INIT ===
+  document.addEventListener('DOMContentLoaded', async function () {
     loadSettings();
-    loadStyles();
-    loadOutputFiles();
     bindEvents();
     updateStep(1);
-    checkCliStatus();
+
+    // Load sidebar data in parallel
+    Promise.all([loadStyles(), loadSkills(), loadOutputFiles()]);
+
+    // Render font selector
+    renderFontSelector();
+
+    // Init CLI check — gates the app
+    var ok = await initCliCheck();
+    if (ok) {
+      var overlay = $('#init-overlay');
+      overlay.classList.add('fade-out');
+      setTimeout(function() { overlay.classList.add('hidden'); }, 400);
+    }
   });
 
-  document.addEventListener('keydown', (e) => {
+  // Ctrl+Enter shortcut
+  document.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (state.currentStep === 1) $('#btn-analyze').click();
-      else if (state.currentStep === 3) $('#btn-generate').click();
-      else if (state.currentStep === 5) handleRefineApply();
+      if (state.currentStep === 1) { var btn = $('#btn-analyze'); if (btn) btn.click(); }
+      else if (state.currentStep === 2) { var btn2 = $('#btn-generate'); if (btn2) btn2.click(); }
     }
   });
 
-  // --- Settings ---
+  // === SETTINGS ===
   function loadSettings() {
-    const lang = localStorage.getItem('pptx-lang');
+    var lang = localStorage.getItem('pptx-lang');
     if (lang) {
       state.language = lang;
-      $$('#language-toggle .pill').forEach(p => p.classList.toggle('active', p.dataset.lang === lang));
+      $$('#language-toggle .pill').forEach(function (p) {
+        p.classList.toggle('active', p.dataset.lang === lang);
+      });
     }
 
-    const instructions = localStorage.getItem('pptx-instructions');
-    $('#default-instructions').value = instructions || DEFAULT_INSTRUCTIONS;
+    var instr = localStorage.getItem('pptx-instructions');
+    $('#default-instructions').value = instr || DEFAULT_INSTRUCTIONS;
 
-    const content = localStorage.getItem('pptx-draft-content');
-    if (content) { $('#content-input').value = content; updateAnalyzeButton(); }
+    var content = localStorage.getItem('pptx-draft-content');
+    if (content) {
+      $('#content-input').value = content;
+      updateAnalyzeButton();
+    }
 
-    // Slide target: restore saved chip selection or default to 3
-    const savedTarget = localStorage.getItem('pptx-slide-target');
+    var savedTarget = localStorage.getItem('pptx-slide-target');
     if (savedTarget && savedTarget !== '') {
-      const chip = $(`.count-chip[data-count="${savedTarget}"]`);
+      var chip = $('.count-chip[data-count="' + savedTarget + '"]');
       if (chip) {
-        $$('.count-chip').forEach(c => c.classList.remove('active'));
+        $$('.count-chip').forEach(function (c) { c.classList.remove('active'); });
         chip.classList.add('active');
       } else {
-        $$('.count-chip').forEach(c => c.classList.remove('active'));
+        $$('.count-chip').forEach(function (c) { c.classList.remove('active'); });
         $('#slide-target').value = savedTarget;
         $('#slide-target').classList.add('active');
       }
     }
 
-    const palette = localStorage.getItem('pptx-palette') || 'indigo';
+    var palette = localStorage.getItem('pptx-palette') || 'office';
     state.palette = palette;
     applyPalette(palette);
+
+    var font = localStorage.getItem('pptx-font') || 'Calibri';
+    state.font = font;
+
+    var customize = localStorage.getItem('pptx-customize') === 'true';
+    state.customizeColorsFont = customize;
+    if ($('#customize-colors-font')) {
+      $('#customize-colors-font').checked = customize;
+      $('#customize-panel').classList.toggle('disabled', !customize);
+    }
+
+    var instrEl = $('#default-instructions');
+    function autoExpand() {
+      instrEl.style.height = 'auto';
+      instrEl.style.height = instrEl.scrollHeight + 'px';
+    }
+    instrEl.addEventListener('input', autoExpand);
+    setTimeout(autoExpand, 50);
   }
 
   function saveSettings() {
     localStorage.setItem('pptx-lang', state.language);
     localStorage.setItem('pptx-instructions', $('#default-instructions').value);
-    const activeChipSave = $('.count-chip.active');
-    localStorage.setItem('pptx-slide-target', activeChipSave ? activeChipSave.dataset.count : $('#slide-target').value);
+    var activeChip = $('.count-chip.active');
+    localStorage.setItem('pptx-slide-target', activeChip ? activeChip.dataset.count : $('#slide-target').value);
     localStorage.setItem('pptx-palette', state.palette);
+    localStorage.setItem('pptx-font', state.font);
+    localStorage.setItem('pptx-customize', state.customizeColorsFont);
     toast('Settings saved', 'success');
   }
 
@@ -125,172 +264,250 @@
     localStorage.setItem('pptx-draft-content', $('#content-input').value);
   }
 
-  // --- Color palette ---
   function applyPalette(id) {
-    const p = PALETTES.find(x => x.id === id) || PALETTES[0];
+    var p = PALETTES.find(function (x) { return x.id === id; }) || PALETTES[0];
     document.documentElement.style.setProperty('--accent', p.accent);
     document.documentElement.style.setProperty('--accent-hover', p.accentHover);
     document.documentElement.style.setProperty('--accent-light', p.accentLight);
     state.palette = id;
-
-    // Update palette selector active state
-    $$('.palette-dot').forEach(d => d.classList.toggle('active', d.dataset.palette === id));
+    $$('.palette-row').forEach(function (d) {
+      d.classList.toggle('active', d.dataset.palette === id);
+    });
   }
 
-  // --- Events ---
+  // === EVENTS ===
   function bindEvents() {
-    // Sidebar toggle
-    $('#sidebar-toggle').addEventListener('click', () => {
+    // Sidebar
+    $('#sidebar-toggle').addEventListener('click', function () {
       $('#sidebar').classList.add('collapsed');
       $('#sidebar-open').hidden = false;
     });
-    $('#sidebar-open').addEventListener('click', () => {
+    $('#sidebar-open').addEventListener('click', function () {
       $('#sidebar').classList.remove('collapsed');
       $('#sidebar-open').hidden = true;
     });
 
-    // Language toggle
-    $$('#language-toggle .pill').forEach(btn => {
-      btn.addEventListener('click', () => {
-        $$('#language-toggle .pill').forEach(p => p.classList.remove('active'));
+    // Language
+    $$('#language-toggle .pill').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        $$('#language-toggle .pill').forEach(function (p) { p.classList.remove('active'); });
         btn.classList.add('active');
         state.language = btn.dataset.lang;
       });
     });
 
-    // Save settings
+    // Save
     $('#save-settings').addEventListener('click', saveSettings);
 
-    // CLI status click to re-test
+    // CLI status
     $('#claude-status').addEventListener('click', checkCliStatus);
 
+    // Refine sidebar
+    $('#refine-toggle').addEventListener('click', function () {
+      $('#refine-sidebar').classList.remove('collapsed');
+    });
+    $('#refine-sidebar-close').addEventListener('click', function () {
+      $('#refine-sidebar').classList.add('collapsed');
+    });
+    $('#refine-apply').addEventListener('click', handleRefineApply);
+
+    // Step navigation (clickable completed steps)
+    $$('.step-indicator .step').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var target = parseInt(el.dataset.step);
+        if (target <= state.highestStep && target !== state.currentStep) {
+          updateStep(target);
+          if (target === 2 && state.slides.length > 0) {
+            $('#outline-analyzing').hidden = true;
+            $('#outline-ready').hidden = false;
+            renderSlideOutline();
+          }
+          if (target === 4) {
+            renderResult();
+          }
+        }
+      });
+    });
+
     // Drop zone
-    const dropZone = $('#drop-zone');
-    const fileInput = $('#file-input');
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
+    var dz = $('#drop-zone');
+    var fi = $('#file-input');
+    dz.addEventListener('click', function () { fi.click(); });
+    dz.addEventListener('dragover', function (e) { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', function () { dz.classList.remove('dragover'); });
+    dz.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dz.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+    fi.addEventListener('change', function () { handleFiles(fi.files); fi.value = ''; });
 
     // Slide count chips
-    $$('.count-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        $$('.count-chip').forEach(c => c.classList.remove('active'));
+    $$('.count-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        $$('.count-chip').forEach(function (c) { c.classList.remove('active'); });
         chip.classList.add('active');
         $('#slide-target').value = '';
         $('#slide-target').classList.remove('active');
       });
     });
-    $('#slide-target').addEventListener('input', () => {
+    $('#slide-target').addEventListener('input', function () {
       if ($('#slide-target').value) {
-        $$('.count-chip').forEach(c => c.classList.remove('active'));
+        $$('.count-chip').forEach(function (c) { c.classList.remove('active'); });
         $('#slide-target').classList.add('active');
       }
     });
 
-    // Auto-expand instructions textarea
-    const instrEl = $('#default-instructions');
-    function autoExpand() { instrEl.style.height = 'auto'; instrEl.style.height = instrEl.scrollHeight + 'px'; }
-    instrEl.addEventListener('input', autoExpand);
-    setTimeout(autoExpand, 50);
-
     // Content input
-    $('#content-input').addEventListener('input', () => { updateAnalyzeButton(); saveDraft(); });
+    $('#content-input').addEventListener('input', function () {
+      updateAnalyzeButton();
+      saveDraft();
+    });
 
-    // Analyze
-    $('#btn-analyze').addEventListener('click', () => startAnalysis());
+    // Step 1 -> 2
+    $('#btn-analyze').addEventListener('click', function () { startAnalysis(); });
 
-    // Step 2 done buttons
-    $('#btn-view-outline').addEventListener('click', () => updateStep(3));
-    $('#btn-back-to-input').addEventListener('click', () => updateStep(1));
-
-    // Generate
+    // Step 2 buttons
+    $('#btn-back-to-input').addEventListener('click', function () { updateStep(1); });
     $('#btn-generate').addEventListener('click', startGeneration);
-    $('#btn-add-slide-bottom').addEventListener('click', () => addSlide());
+    $('#btn-add-slide-bottom').addEventListener('click', function () { addSlide(); });
+
+    // Analyze log toggle
+    $('#analyze-log-toggle').addEventListener('click', function () {
+      $('#analyze-terminal').classList.toggle('collapsed');
+    });
+
+    // Step 3
     $('#btn-cancel-gen').addEventListener('click', cancelGeneration);
-    $('#btn-download').addEventListener('click', downloadFile);
-
-    // New presentation
-    $('#btn-new-presentation').addEventListener('click', () => {
-      state.slides = []; state.revisions = []; state.revisionCount = 0;
-      state.generatedFilename = null; state.uploadedFiles = []; state.revisionFiles = [];
-      state.slidePreviewUrls = []; state.slideComments = {}; state.highestStep = 1;
-      $('#content-input').value = ''; $('#uploaded-files').innerHTML = '';
-      updateStep(1);
+    $('#btn-view-result').addEventListener('click', function () {
+      updateStep(4);
+      renderResult();
     });
-
-    // Copy log
-    $('#gen-copy-log').addEventListener('click', () => {
-      navigator.clipboard.writeText($('#gen-log').textContent).then(() => toast('Log copied', 'success'));
-    });
-
-    // Clickable step navigation
-    $$('.step-indicator .step').forEach(el => {
-      el.addEventListener('click', () => {
-        const target = parseInt(el.dataset.step);
-        if (target <= state.highestStep && target !== state.currentStep) {
-          updateStep(target);
-          if (target === 3) renderSlideOutline();
-        }
+    $('#gen-copy-log').addEventListener('click', function () {
+      navigator.clipboard.writeText($('#gen-log').textContent).then(function () {
+        toast('Log copied', 'success');
       });
     });
 
-    // Refine sidebar toggle
-    $('#refine-toggle').addEventListener('click', () => {
-      $('#refine-sidebar').classList.remove('collapsed');
-    });
-    $('#refine-sidebar-close').addEventListener('click', () => {
-      $('#refine-sidebar').classList.add('collapsed');
+    // Step 4
+    $('#btn-download').addEventListener('click', downloadFile);
+    $('#btn-visual-qa').addEventListener('click', runVisualQA);
+    $('#btn-new-presentation').addEventListener('click', function () {
+      state.slides = [];
+      state.revisions = [];
+      state.revisionCount = 0;
+      state.generatedFilename = null;
+      state.uploadedFiles = [];
+      state.slidePreviewUrls = [];
+      state.slideComments = {};
+      state.highestStep = 1;
+      state.timings = { analyze: 0, outline: 0, generate: 0, total: 0 };
+      $('#content-input').value = '';
+      $('#uploaded-files').innerHTML = '';
+      updateStep(1);
     });
 
-    // Refine apply
-    $('#refine-apply').addEventListener('click', handleRefineApply);
-
-    // Slide modal
+    // Modal
     $('#slide-modal-close').addEventListener('click', closeSlideModal);
-    $('#slide-modal-prev').addEventListener('click', () => {
-      if (state.slidePreviewUrls.length === 0) return;
-      state.modalSlideIndex = (state.modalSlideIndex - 1 + state.slidePreviewUrls.length) % state.slidePreviewUrls.length;
+    $('#slide-modal-prev').addEventListener('click', function () {
+      state.modalSlideIndex = Math.max(0, state.modalSlideIndex - 1);
       updateSlideModal();
     });
-    $('#slide-modal-next').addEventListener('click', () => {
-      if (state.slidePreviewUrls.length === 0) return;
-      state.modalSlideIndex = (state.modalSlideIndex + 1) % state.slidePreviewUrls.length;
+    $('#slide-modal-next').addEventListener('click', function () {
+      state.modalSlideIndex = Math.min(state.slidePreviewUrls.length - 1, state.modalSlideIndex + 1);
       updateSlideModal();
     });
-    $('#slide-modal').addEventListener('click', (e) => {
+    $('#slide-modal').addEventListener('click', function (e) {
       if (e.target === $('#slide-modal')) closeSlideModal();
     });
-
-    // Keyboard for modal
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', function (e) {
       if ($('#slide-modal').hidden) return;
       if (e.key === 'Escape') closeSlideModal();
       else if (e.key === 'ArrowLeft') $('#slide-modal-prev').click();
       else if (e.key === 'ArrowRight') $('#slide-modal-next').click();
     });
+
+    // Customize colors & font toggle
+    $('#customize-colors-font').addEventListener('change', function () {
+      state.customizeColorsFont = this.checked;
+      $('#customize-panel').classList.toggle('disabled', !this.checked);
+    });
+
+    // Init retry + skip
+    $('#init-retry').addEventListener('click', async function () {
+      var ok = await initCliCheck();
+      if (ok) { var o = $('#init-overlay'); o.classList.add('fade-out'); setTimeout(function() { o.classList.add('hidden'); }, 400); }
+    });
+    $('#init-skip').addEventListener('click', function (e) {
+      e.preventDefault();
+      var o = $('#init-overlay'); o.classList.add('fade-out'); setTimeout(function() { o.classList.add('hidden'); }, 400);
+    });
+
+    // Font selector
+    $('#font-trigger').addEventListener('click', function () {
+      var dd = $('#font-dropdown');
+      dd.hidden = !dd.hidden;
+      if (!dd.hidden) { $('#font-search').value = ''; renderFontOptions(''); $('#font-search').focus(); }
+    });
+    $('#font-search').addEventListener('input', function () { renderFontOptions(this.value); });
+    document.addEventListener('click', function (e) {
+      if (!$('#font-selector').contains(e.target)) $('#font-dropdown').hidden = true;
+    });
   }
 
-  // --- CLI Status (simple check) ---
+  // === INIT CLI CHECK ===
+  async function initCliCheck() {
+    $('#init-status').textContent = 'Checking Claude CLI connection...';
+    $('#init-retry').hidden = true;
+    // Show skip link after 10s
+    setTimeout(function() { $('#init-skip').style.display = 'inline'; }, 10000);
+    try {
+      var res = await fetch(API + '/claude-test', { signal: AbortSignal.timeout(25000) });
+      var data = await res.json();
+      updateCliDot(data);
+      if (data.checks.cliTest && data.checks.cliTest.ok) return true;
+      $('#init-status').textContent = 'Claude CLI not responding. Check Docker setup.';
+      $('#init-retry').hidden = false;
+      return false;
+    } catch (e) {
+      $('#init-status').textContent = 'Backend unreachable. Is Docker running?';
+      $('#init-retry').hidden = false;
+      return false;
+    }
+  }
+
+  function updateCliDot(data) {
+    var dot = $('#claude-status-dot');
+    var text = $('#claude-status-text');
+    if (data.checks.cliTest && data.checks.cliTest.ok) {
+      dot.className = 'status-dot ok';
+      text.textContent = 'CLI connected';
+    } else if (data.allOk) {
+      dot.className = 'status-dot ok';
+      text.textContent = 'CLI connected';
+    } else {
+      dot.className = 'status-dot error';
+      var fk = Object.keys(data.checks).find(function (k) { return !data.checks[k].ok; });
+      text.textContent = ((data.checks[fk] && data.checks[fk].error) || fk + ' failed').slice(0, 30);
+    }
+  }
+
+  // === CLI STATUS ===
   async function checkCliStatus() {
-    const dot = $('#claude-status-dot');
-    const text = $('#claude-status-text');
+    var dot = $('#claude-status-dot');
+    var text = $('#claude-status-text');
     dot.className = 'status-dot loading';
     text.textContent = 'Checking...';
-
     try {
-      const res = await fetch(`${API}/claude-test`);
-      const data = await res.json();
+      var res = await fetch(API + '/claude-test');
+      var data = await res.json();
       if (data.allOk) {
         dot.className = 'status-dot ok';
         text.textContent = 'CLI connected';
       } else {
         dot.className = 'status-dot error';
-        const failedKey = Object.keys(data.checks).find(k => !data.checks[k].ok);
-        const failedCheck = data.checks[failedKey];
-        text.textContent = failedCheck?.error?.slice(0, 30) || failedKey + ' failed';
-        text.title = JSON.stringify(failedCheck, null, 2);
+        var fk = Object.keys(data.checks).find(function (k) { return !data.checks[k].ok; });
+        text.textContent = ((data.checks[fk] && data.checks[fk].error) || fk + ' failed').slice(0, 30);
       }
     } catch (e) {
       dot.className = 'status-dot error';
@@ -298,214 +515,291 @@
     }
   }
 
-  // --- File handling ---
+  // === FILE HANDLING ===
   async function handleFiles(fileList) {
-    const files = Array.from(fileList);
+    var files = Array.from(fileList);
     if (!files.length) return;
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
+    var formData = new FormData();
+    files.forEach(function (f) { formData.append('files', f); });
     try {
-      const res = await fetch(`${API}/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.files) { data.files.forEach(f => state.uploadedFiles.push(f)); renderUploadedFiles(); updateAnalyzeButton(); }
-    } catch (e) { toast('Upload failed: ' + e.message, 'error'); }
-  }
-
-  async function handleRevisionFiles(fileList) {
-    const files = Array.from(fileList);
-    if (!files.length) return;
-    const formData = new FormData();
-    files.forEach(f => formData.append('files', f));
-    try {
-      const res = await fetch(`${API}/upload`, { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.files) { data.files.forEach(f => state.revisionFiles.push(f)); renderRevisionFiles(); }
-    } catch (e) { toast('Upload failed: ' + e.message, 'error'); }
+      var res = await fetch(API + '/upload', { method: 'POST', body: formData });
+      var data = await res.json();
+      if (data.files) {
+        data.files.forEach(function (f) { state.uploadedFiles.push(f); });
+        renderUploadedFiles();
+        updateAnalyzeButton();
+      }
+    } catch (e) {
+      toast('Upload failed: ' + e.message, 'error');
+    }
   }
 
   function renderUploadedFiles() {
-    const container = $('#uploaded-files');
-    container.innerHTML = state.uploadedFiles.map((f, i) => `
-      <div class="file-tag"><span>${f.originalName}</span><span class="file-size">${formatSize(f.size)}</span><button class="remove-file" data-index="${i}">&times;</button></div>
-    `).join('');
-    container.querySelectorAll('.remove-file').forEach(btn => {
-      btn.addEventListener('click', () => { state.uploadedFiles.splice(parseInt(btn.dataset.index), 1); renderUploadedFiles(); updateAnalyzeButton(); });
-    });
-  }
-
-  function renderRevisionFiles() {
-    const container = $('#revision-files');
-    if (!container) return;
-    container.innerHTML = state.revisionFiles.map((f, i) => `
-      <div class="file-tag"><span>${f.originalName}</span><span class="file-size">${formatSize(f.size)}</span><button class="remove-file" data-index="${i}">&times;</button></div>
-    `).join('');
-    container.querySelectorAll('.remove-file').forEach(btn => {
-      btn.addEventListener('click', () => { state.revisionFiles.splice(parseInt(btn.dataset.index), 1); renderRevisionFiles(); });
+    var c = $('#uploaded-files');
+    c.innerHTML = state.uploadedFiles.map(function (f, i) {
+      return '<div class="file-tag">' +
+        '<span>' + escapeHtml(f.originalName) + '</span>' +
+        '<span class="file-size">' + formatSize(f.size) + '</span>' +
+        '<button class="remove-file" data-index="' + i + '">&times;</button>' +
+        '</div>';
+    }).join('');
+    c.querySelectorAll('.remove-file').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.uploadedFiles.splice(parseInt(btn.dataset.index), 1);
+        renderUploadedFiles();
+        updateAnalyzeButton();
+      });
     });
   }
 
   function updateAnalyzeButton() {
-    const hasContent = $('#content-input').value.trim().length > 0;
-    const hasFiles = state.uploadedFiles.length > 0;
-    $('#btn-analyze').disabled = !(hasContent || hasFiles);
+    $('#btn-analyze').disabled = !($('#content-input').value.trim().length > 0 || state.uploadedFiles.length > 0);
   }
 
-  // --- Styles ---
+  // === SKILLS ===
+  async function loadSkills() {
+    try {
+      var res = await fetch(API + '/skills');
+      state.skills = await res.json();
+      renderSkills();
+    } catch (e) {
+      state.skills = [];
+    }
+  }
+
+  // === FONT SELECTOR ===
+  function renderFontSelector() {
+    $('#font-selected-name').textContent = state.font;
+    $('#font-selected-name').style.fontFamily = "'" + state.font + "', sans-serif";
+    renderFontOptions('');
+  }
+
+  function renderFontOptions(filter) {
+    var container = $('#font-options');
+    var lowerFilter = filter.toLowerCase();
+    container.innerHTML = FONTS.filter(function (f) {
+      return !lowerFilter || f.name.toLowerCase().includes(lowerFilter) || f.desc.toLowerCase().includes(lowerFilter);
+    }).map(function (f) {
+      return '<div class="font-option ' + (state.font === f.name ? 'active' : '') + '" data-font="' + f.name + '" style="font-family:\'' + f.name + '\', sans-serif">' +
+        f.name + ' <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-ui)"> — ' + f.desc + '</span></div>';
+    }).join('');
+    container.querySelectorAll('.font-option').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        state.font = opt.dataset.font;
+        $('#font-selected-name').textContent = state.font;
+        $('#font-selected-name').style.fontFamily = "'" + state.font + "', sans-serif";
+        $('#font-dropdown').hidden = true;
+        container.querySelectorAll('.font-option').forEach(function (o) { o.classList.remove('active'); });
+        opt.classList.add('active');
+        if (state.currentStep === 4 && state.generatedFilename) {
+          promptStyleRevision('font changed to: ' + state.font);
+        }
+      });
+    });
+  }
+
+  function renderSkills() {
+    var container = $('#skills-list');
+    if (!state.skills || state.skills.length === 0) {
+      container.innerHTML = '<div class="empty-state-small">No skills found in skills/</div>';
+      return;
+    }
+    container.innerHTML = state.skills.map(function (s) {
+      return '<div class="style-item" title="' + escapeHtml(s.filename) + '">' +
+        '<label class="style-toggle">' +
+        '<input type="checkbox" data-id="' + s.id + '" ' + (s.enabled ? 'checked' : '') + '>' +
+        '<span class="slider"></span></label>' +
+        '<span class="style-name">' + escapeHtml(s.name) + '</span></div>';
+    }).join('');
+    container.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var sk = state.skills.find(function (s) { return s.id === cb.dataset.id; });
+        if (sk) sk.enabled = cb.checked;
+      });
+    });
+  }
+
+  // === STYLES + PALETTE ===
   async function loadStyles() {
     try {
-      const res = await fetch(`${API}/styles`);
+      var res = await fetch(API + '/styles');
       state.styles = await res.json();
       renderStyles();
-    } catch (e) { state.styles = []; }
+    } catch (e) {
+      state.styles = [];
+    }
   }
 
   function renderStyles() {
-    const container = $('#styles-list');
-
-    // PPT-style palette selector
-    let paletteHtml = '<div style="margin-bottom:16px"><label class="section-label">Color Palette</label><div class="palette-grid">';
-    PALETTES.forEach(p => {
-      const swatches = p.colors.map(c => `<span style="width:14px;height:14px;background:${c};display:inline-block;"></span>`).join('');
-      paletteHtml += `<div class="palette-row ${state.palette === p.id ? 'active' : ''}" data-palette="${p.id}" title="${p.name}">
-        <span class="palette-swatches">${swatches}</span>
-        <span class="palette-name">${p.name}</span>
-      </div>`;
+    // Render palette in separate container
+    var paletteContainer = $('#palette-list');
+    var paletteHtml = '<div class="palette-grid">';
+    PALETTES.forEach(function (p) {
+      var sw = p.colors.map(function (c) {
+        return '<span style="width:14px;height:14px;background:' + c + ';display:inline-block"></span>';
+      }).join('');
+      paletteHtml += '<div class="palette-row ' + (state.palette === p.id ? 'active' : '') + '" data-palette="' + p.id + '" title="' + p.name + '">' +
+        '<span class="palette-swatches">' + sw + '</span>' +
+        '<span class="palette-name">' + p.name + '</span></div>';
     });
-    paletteHtml += '</div></div>';
+    paletteHtml += '</div>';
+    paletteContainer.innerHTML = paletteHtml;
 
-    container.innerHTML = paletteHtml + state.styles.map(s => `
-      <div class="style-item" title="${s.instruction}">
-        <label class="style-toggle"><input type="checkbox" data-id="${s.id}" ${s.enabled ? 'checked' : ''}><span class="slider"></span></label>
-        <span class="style-name">${s.name}</span>
-      </div>
-    `).join('');
-
-    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const style = state.styles.find(s => s.id === cb.dataset.id);
-        if (style) style.enabled = cb.checked;
-      });
-    });
-
-    container.querySelectorAll('.palette-row').forEach(row => {
-      row.addEventListener('click', () => {
-        container.querySelectorAll('.palette-row').forEach(r => r.classList.remove('active'));
+    paletteContainer.querySelectorAll('.palette-row').forEach(function (row) {
+      row.addEventListener('click', function () {
+        paletteContainer.querySelectorAll('.palette-row').forEach(function (r) { r.classList.remove('active'); });
         row.classList.add('active');
         applyPalette(row.dataset.palette);
         localStorage.setItem('pptx-palette', row.dataset.palette);
+        if (state.currentStep === 4 && state.generatedFilename) {
+          promptStyleRevision('color palette changed to: ' + row.dataset.palette);
+        }
       });
     });
   }
 
-  function getEnabledStyles() { return state.styles.filter(s => s.enabled).map(s => s.id); }
+  function getEnabledStyles() {
+    return state.styles.filter(function (s) { return s.enabled; }).map(function (s) { return s.id; });
+  }
 
-  // --- Output files ---
+  // === OUTPUT FILES ===
   async function loadOutputFiles() {
     try {
-      const res = await fetch(`${API}/outputs`);
-      const files = await res.json();
-      renderOutputFiles(files);
+      var res = await fetch(API + '/outputs');
+      renderOutputFiles(await res.json());
     } catch (e) { /* ignore */ }
   }
 
   function renderOutputFiles(files) {
-    const container = $('#files-list');
-    if (!files.length) { container.innerHTML = '<div class="empty-state-small">No files yet</div>'; return; }
-    container.innerHTML = files.map(f => `
-      <a class="file-item" href="${API}/outputs/${f.filename}" download>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="1" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 5h4M5 7h4M5 9h2" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/></svg>
-        <span class="file-name">${f.filename}</span>
-      </a>
-    `).join('');
+    var c = $('#files-list');
+    if (!files.length) {
+      c.innerHTML = '<div class="empty-state-small">No files yet</div>';
+      return;
+    }
+    c.innerHTML = files.map(function (f) {
+      return '<a class="file-item" href="' + API + '/outputs/' + f.filename + '" download>' +
+        '<span class="file-name">' + escapeHtml(f.filename) + '</span></a>';
+    }).join('');
   }
 
-  // --- Step navigation ---
+  // === STEP NAVIGATION ===
   function updateStep(step) {
     state.currentStep = step;
     state.highestStep = Math.max(state.highestStep, step);
-
-    $$('.step-indicator .step').forEach(el => {
-      const s = parseInt(el.dataset.step);
-      el.classList.remove('active', 'completed', 'clickable');
+    $$('.step-indicator .step').forEach(function (el) {
+      var s = parseInt(el.dataset.step);
+      el.classList.remove('active', 'completed');
       if (s === step) el.classList.add('active');
       else if (s < step) el.classList.add('completed');
-      if (s <= state.highestStep && s !== step) el.classList.add('clickable');
     });
-
-    $$('.step-content').forEach(el => el.classList.remove('active'));
-    const target = $(`#step-${step}`);
+    $$('.step-content').forEach(function (el) { el.classList.remove('active'); });
+    var target = $('#step-' + step);
     if (target) target.classList.add('active');
-
     updateRefineContext(step);
   }
 
-  // --- Refine sidebar ---
   function updateRefineContext(step) {
-    const ctx = $('#refine-context');
+    var ctx = $('#refine-context');
     if (!ctx) return;
     switch (step) {
-      case 1:
-        ctx.textContent = 'Refine is available after analysis.';
-        break;
-      case 2:
-        ctx.textContent = 'Analysis in progress. Wait for completion to refine.';
-        break;
-      case 3:
-        ctx.textContent = 'Re-analyze with additional instructions. The outline will be regenerated.';
-        break;
-      case 4:
-        ctx.textContent = 'Generation in progress. Wait for completion to refine.';
-        break;
-      case 5:
-        ctx.textContent = 'Add revision instructions. Per-slide comments below will be included automatically.';
-        break;
-      default:
-        ctx.textContent = 'Add instructions to refine the current output.';
+      case 1: ctx.textContent = 'Modify your input content or instructions.'; break;
+      case 2: ctx.textContent = 'Re-analyze with different instructions or adjust the outline.'; break;
+      case 3: ctx.textContent = 'Generation in progress. Wait for completion.'; break;
+      case 4: ctx.textContent = 'Describe changes to revise the presentation.'; break;
+      default: ctx.textContent = 'Add instructions to refine the current output.';
     }
   }
 
   function handleRefineApply() {
-    const refineInput = ($('#refine-input') ? $('#refine-input').value.trim() : '');
-
-    if (state.currentStep === 3) {
-      if (!refineInput) { toast('Enter refine instructions', 'warning'); return; }
+    var input = $('#refine-input').value.trim();
+    if (!input) {
+      toast('Please enter instructions', 'warning');
+      return;
+    }
+    if (state.currentStep === 2) {
       $('#refine-sidebar').classList.add('collapsed');
-      $('#refine-input').value = '';
-      startAnalysis(refineInput);
-    } else if (state.currentStep === 5) {
-      // Collect per-slide comments
-      const slideNotes = Object.entries(state.slideComments)
-        .filter(([_, v]) => v.trim())
-        .map(([num, text]) => `- Slide ${num}: ${text.trim()}`)
-        .join('\n');
-
-      const instructions = [refineInput, slideNotes].filter(Boolean).join('\n\n## Per-slide notes:\n');
-
-      if (!instructions.trim()) { toast('Please add revision notes (refine text or per-slide comments)', 'warning'); return; }
-
-      state.refineInstructions = instructions;
+      startAnalysis(input);
+    } else if (state.currentStep === 4) {
+      state.refineInstructions = input;
       $('#refine-sidebar').classList.add('collapsed');
-      $('#refine-input').value = '';
       startRevision();
     } else {
-      toast('Refine is not available on this step', 'warning');
+      toast('Refine not available on this step', 'warning');
+    }
+    $('#refine-input').value = '';
+  }
+
+  // === TIMERS ===
+  function startTimer(elId) {
+    var key = elId === 'analyze-timer' ? 'analyze' : 'gen';
+    state[key + 'Seconds'] = 0;
+    var el = $('#' + elId);
+    el.textContent = '0:00';
+    state[key + 'Timer'] = setInterval(function () {
+      state[key + 'Seconds']++;
+      var m = Math.floor(state[key + 'Seconds'] / 60);
+      var s = state[key + 'Seconds'] % 60;
+      el.textContent = m + ':' + s.toString().padStart(2, '0');
+
+      // For generation: show "still working" if no log for 15+ seconds
+      if (key === 'gen' && state.genLastLogTime) {
+        var silenceMs = Date.now() - state.genLastLogTime;
+        var detail = $('#gen-status-detail');
+        if (silenceMs > 60000) {
+          detail.textContent = 'Claude is still working (complex generation)...';
+        } else if (silenceMs > 30000) {
+          detail.textContent = 'Processing... this can take a minute';
+        } else if (silenceMs > 15000 && detail.textContent === 'Claude is working...') {
+          detail.textContent = 'Claude is writing code...';
+        }
+      }
+    }, 1000);
+  }
+
+  function stopTimer(key) {
+    if (state[key + 'Timer']) {
+      clearInterval(state[key + 'Timer']);
+      state[key + 'Timer'] = null;
     }
   }
 
-  // --- Step 2: Analysis ---
-  function startAnalyzeTimer() {
+  function formatDuration(secs) {
+    if (secs < 60) return secs + 's';
+    return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
+  }
+
+  var ANALYZE_STATUS_MESSAGES = [
+    { at: 3, text: 'Connected -- reading your input...' },
+    { at: 8, text: 'Understanding topic and audience...' },
+    { at: 15, text: 'Identifying key themes...' },
+    { at: 25, text: 'Designing narrative arc...' },
+    { at: 40, text: 'Writing action titles...' },
+    { at: 60, text: 'Selecting visualizations...' },
+    { at: 80, text: 'Almost there...' }
+  ];
+
+  // === STEP 2: ANALYSIS ===
+  async function startAnalysis(extraInstructions) {
+    updateStep(2);
+    $('#outline-analyzing').hidden = false;
+    $('#outline-ready').hidden = true;
+    $('#analyze-terminal').classList.remove('collapsed');
+    var logEl = $('#analyze-log');
+    logEl.textContent = '';
+    $('#analyze-status-text').textContent = 'Connecting to Claude CLI...';
     state.analyzeSeconds = 0;
     state.lastStatusIdx = -1;
-    const el = $('#analyze-timer');
-    el.textContent = '0:00';
-    state.analyzeTimer = setInterval(() => {
-      state.analyzeSeconds++;
-      const m = Math.floor(state.analyzeSeconds / 60);
-      const s = state.analyzeSeconds % 60;
-      el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
 
-      // Show timed status messages
-      for (let i = ANALYZE_STATUS_MESSAGES.length - 1; i >= 0; i--) {
+    // Start timer with status message updates
+    var timerEl = $('#analyze-timer');
+    timerEl.textContent = '0:00';
+    if (state.analyzeTimer) clearInterval(state.analyzeTimer);
+    state.analyzeTimer = setInterval(function () {
+      state.analyzeSeconds++;
+      var m = Math.floor(state.analyzeSeconds / 60);
+      var s = state.analyzeSeconds % 60;
+      timerEl.textContent = m + ':' + s.toString().padStart(2, '0');
+      for (var i = ANALYZE_STATUS_MESSAGES.length - 1; i >= 0; i--) {
         if (state.analyzeSeconds >= ANALYZE_STATUS_MESSAGES[i].at && i > state.lastStatusIdx) {
           state.lastStatusIdx = i;
           $('#analyze-status-text').textContent = ANALYZE_STATUS_MESSAGES[i].text;
@@ -513,105 +807,62 @@
         }
       }
     }, 1000);
-  }
 
-  function stopAnalyzeTimer() {
-    if (state.analyzeTimer) { clearInterval(state.analyzeTimer); state.analyzeTimer = null; }
-  }
+    var instructions = $('#default-instructions').value;
+    var activeChip = $('.count-chip.active');
+    var customVal = parseInt($('#slide-target').value);
+    var slideTarget = customVal || (activeChip ? parseInt(activeChip.dataset.count) : 3);
+    var content = $('#content-input').value;
+    if (extraInstructions) content += '\n\n## Additional instructions:\n' + extraInstructions;
 
-  // Status messages shown during analysis based on time elapsed
-  const ANALYZE_STATUS_MESSAGES = [
-    { at: 3,  text: 'Connected — Claude is reading your input...' },
-    { at: 8,  text: 'Understanding the topic and audience...' },
-    { at: 15, text: 'Identifying key themes and arguments...' },
-    { at: 25, text: 'Designing the narrative arc and slide structure...' },
-    { at: 40, text: 'Writing action titles and descriptions...' },
-    { at: 60, text: 'Selecting optimal visualizations per slide...' },
-    { at: 80, text: 'Almost there — finalizing...' }
-  ];
-
-  async function startAnalysis(extraInstructions) {
-    updateStep(2);
-    // Reset analyze UI
-    $('#analyze-in-progress').hidden = false;
-    $('#analyze-done').hidden = true;
-    $('#btn-view-outline').hidden = false;
-    $('#analyze-summary').style.color = '';
-    const logEl = $('#analyze-log');
-    logEl.textContent = '';
-    $('#analyze-status-text').textContent = 'Connecting to Claude CLI...';
-    startAnalyzeTimer();
-
-    const instructions = $('#default-instructions').value;
-    const activeChip = $('.count-chip.active');
-    const customVal = parseInt($('#slide-target').value);
-    const slideTarget = customVal || (activeChip ? parseInt(activeChip.dataset.count) : 15);
-
-    let content = $('#content-input').value;
-    if (extraInstructions) {
-      content += `\n\n## Additional instructions for re-analysis:\n${extraInstructions}`;
-    }
-
-    const body = {
-      content,
+    var body = {
+      content: content,
       language: state.language,
       styles: getEnabledStyles(),
-      uploadedFiles: state.uploadedFiles.map(f => f.storedName),
-      defaultInstructions: instructions + `\n\nTarget approximately ${slideTarget} slides.`
+      uploadedFiles: state.uploadedFiles.map(function (f) { return f.storedName; }),
+      defaultInstructions: instructions + '\n\nTarget approximately ' + slideTarget + ' slides.'
     };
 
-    let lineCount = 0;
-
+    var lineCount = 0;
     try {
-      const response = await fetch(`${API}/analyze`, {
+      var response = await fetch(API + '/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
         buffer = lines.pop();
-
-        for (const line of lines) {
+        for (var idx = 0; idx < lines.length; idx++) {
+          var line = lines[idx];
           if (!line.startsWith('data: ')) continue;
           try {
-            const event = JSON.parse(line.slice(6));
+            var event = JSON.parse(line.slice(6));
             if (event.type === 'log') {
               lineCount++;
               logEl.textContent += event.message + '\n';
               logEl.scrollTop = logEl.scrollHeight;
-
-              // Update status based on log content
-              if (lineCount === 1) {
-                $('#analyze-status-text').textContent = 'Claude is working...';
-              }
-              if (event.message.includes('slideNumber') || event.message.includes('"slideNumber"')) {
-                $('#analyze-status-text').textContent = 'Finalizing response...';
-              }
+              if (lineCount === 1) $('#analyze-status-text').textContent = 'Claude is working...';
             } else {
               handleAnalyzeEvent(event);
             }
-          } catch (e) { /* skip */ }
+          } catch (parseErr) { /* skip malformed lines */ }
         }
       }
-
       if (buffer.startsWith('data: ')) {
-        try { handleAnalyzeEvent(JSON.parse(buffer.slice(6))); } catch (e) { /* skip */ }
+        try { handleAnalyzeEvent(JSON.parse(buffer.slice(6))); } catch (e) { /* ignore */ }
       }
     } catch (e) {
       toast('Analysis failed: ' + e.message, 'error');
       updateStep(1);
     }
-    stopAnalyzeTimer();
+    stopTimer('analyze');
   }
 
   function handleAnalyzeEvent(event) {
@@ -620,512 +871,584 @@
         state.slides = event.slides;
         state.timings.analyze = state.analyzeSeconds;
         state.stepStartTime = Date.now();
+        $('#outline-analyzing').hidden = true;
+        $('#outline-ready').hidden = false;
+        $('#analyze-terminal').classList.add('collapsed');
         renderSlideOutline();
-
-        // Show done state
-        $('#analyze-in-progress').hidden = true;
-        $('#analyze-done').hidden = false;
-        $('#analyze-summary').textContent = `${event.slides.length} slides generated in ${formatDuration(state.analyzeSeconds)}`;
-
-        // Render analysis facts
-        renderAnalysisFacts(event.slides);
-
-        toast(`Analysis complete — ${event.slides.length} slides`, 'success');
+        renderAnalysisFacts();
+        toast(event.slides.length + ' slides in ' + formatDuration(state.analyzeSeconds), 'success');
         break;
       case 'error':
-        const errLog = $('#analyze-log');
-        errLog.textContent += '\n\n=== ERROR ===\n' + event.message + '\n';
-        errLog.scrollTop = errLog.scrollHeight;
-        $('#analyze-in-progress').hidden = true;
-        $('#analyze-done').hidden = false;
-        $('#analyze-summary').textContent = 'Analysis failed — see log below';
-        $('#analyze-summary').style.color = 'var(--error)';
-        $('#btn-view-outline').hidden = true;
+        var logEl = $('#analyze-log');
+        logEl.textContent += '\n=== ERROR ===\n' + event.message + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
         toast('Analysis error: ' + event.message, 'error');
         break;
     }
   }
 
-  function renderAnalysisFacts(slides) {
-    const factsEl = $('#analysis-facts');
-    if (!factsEl) return;
-
-    const slideCount = slides.length;
-
-    // Count unique visual suggestion keywords
-    const visualTypes = new Set();
-    slides.forEach(s => {
-      if (s.visualSuggestion) {
-        const keywords = s.visualSuggestion.toLowerCase()
-          .match(/\b(chart|matrix|table|flow|diagram|timeline|map|graph|bar|pie|waterfall|funnel|comparison|process|pyramid|swot|list|icons|image|photo|illustration)\b/g);
-        if (keywords) keywords.forEach(k => visualTypes.add(k));
-      }
-    });
-
-    // Count research slides
-    const researchCount = slides.filter(s => s.researchNeeded).length;
-
-    let html = `<span class="fact-chip">${slideCount} slides</span>`;
-    if (visualTypes.size > 0) {
-      html += `<span class="fact-chip">${visualTypes.size} visual type${visualTypes.size > 1 ? 's' : ''}</span>`;
-    }
-    if (researchCount > 0) {
-      html += `<span class="fact-chip">${researchCount} research slide${researchCount > 1 ? 's' : ''}</span>`;
-    }
-
-    factsEl.innerHTML = html;
+  function renderAnalysisFacts() {
+    var facts = $('#analysis-facts');
+    var visualTypes = new Set(
+      state.slides.map(function (s) {
+        return ((s.visualSuggestion || '').split(/[,;]/)[0] || '').trim().toLowerCase();
+      }).filter(Boolean)
+    );
+    var researchCount = state.slides.filter(function (s) { return s.researchNeeded; }).length;
+    facts.innerHTML =
+      '<div class="fact-chip"><span class="fact-label">Slides</span><span class="fact-value">' + state.slides.length + '</span></div>' +
+      '<div class="fact-chip"><span class="fact-label">Visual Types</span><span class="fact-value">' + visualTypes.size + '</span></div>' +
+      (researchCount > 0 ? '<div class="fact-chip"><span class="fact-label">Research</span><span class="fact-value">' + researchCount + '</span></div>' : '');
   }
 
-  // --- Step 3: Slide Outline Editor ---
+  // === SLIDE OUTLINE EDITOR ===
   function renderSlideOutline() {
-    const grid = $('#slides-grid');
+    var grid = $('#slides-grid');
     grid.innerHTML = '';
-    state.slides.forEach((slide, index) => {
+    state.slides.forEach(function (slide, index) {
       slide.slideNumber = index + 1;
       grid.appendChild(createSlideCard(slide, index));
     });
-    $('#slide-count').textContent = `${state.slides.length} slides`;
+    $('#slide-count').textContent = state.slides.length + ' slides';
     setupDragAndDrop();
   }
 
   function createSlideCard(slide, index) {
-    const card = document.createElement('div');
+    var card = document.createElement('div');
     card.className = 'slide-card';
     card.draggable = true;
     card.dataset.index = index;
+    card.innerHTML =
+      '<div class="slide-card-header">' +
+        '<span class="slide-number">' + slide.slideNumber + '</span>' +
+        '<span class="drag-handle" title="Drag to reorder"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="4" r="1" fill="currentColor"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/></svg></span>' +
+      '</div>' +
+      '<div class="slide-field"><label>Action Title</label><input type="text" class="action-title" value="' + escapeHtml(slide.actionTitle || '') + '" data-field="actionTitle"></div>' +
+      '<div class="slide-fields-row">' +
+        '<div class="slide-field"><label>Description</label><textarea data-field="description" rows="3">' + escapeHtml(slide.description || '') + '</textarea></div>' +
+        '<div class="slide-field"><label>Visual Concept</label><textarea data-field="visualSuggestion" rows="3">' + escapeHtml(slide.visualSuggestion || '') + '</textarea></div>' +
+      '</div>' +
+      '<div class="slide-card-footer">' +
+        '<label class="research-toggle"><input type="checkbox" data-field="researchNeeded" ' + (slide.researchNeeded ? 'checked' : '') + '> Research</label>' +
+        '<div class="slide-card-actions">' +
+          '<button class="icon-btn duplicate" title="Duplicate"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 10V2h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>' +
+          '<button class="icon-btn delete" title="Delete"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M6 6.5v3M8 6.5v3M4 4l.5 7a1 1 0 001 1h3a1 1 0 001-1L10 4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '</div>' +
+      '</div>';
 
-    card.innerHTML = `
-      <div class="slide-card-header">
-        <span class="slide-number">${slide.slideNumber}</span>
-        <span class="drag-handle" title="Drag to reorder">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="4" r="1" fill="currentColor"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/></svg>
-        </span>
-      </div>
-      <div class="slide-field">
-        <label>Action Title</label>
-        <input type="text" class="action-title" value="${escapeHtml(slide.actionTitle || '')}" data-field="actionTitle">
-      </div>
-      <div class="slide-fields-row">
-        <div class="slide-field">
-          <label>Description</label>
-          <textarea data-field="description" rows="4">${escapeHtml(slide.description || '')}</textarea>
-        </div>
-        <div class="slide-field">
-          <label>Visual Concept</label>
-          <textarea data-field="visualSuggestion" rows="4">${escapeHtml(slide.visualSuggestion || '')}</textarea>
-        </div>
-      </div>
-      <div class="slide-card-footer">
-        <label class="research-toggle">
-          <input type="checkbox" data-field="researchNeeded" ${slide.researchNeeded ? 'checked' : ''}>
-          Research & References
-        </label>
-        <div class="slide-card-actions">
-          <button class="icon-btn duplicate" title="Duplicate">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 10V2h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          </button>
-          <button class="icon-btn delete" title="Delete">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 4h8M5.5 4V3a1 1 0 011-1h1a1 1 0 011 1v1M6 6.5v3M8 6.5v3M4 4l.5 7a1 1 0 001 1h3a1 1 0 001-1L10 4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-      </div>
-    `;
-
-    card.querySelectorAll('input[type="text"], textarea').forEach(input => {
-      input.addEventListener('input', () => {
+    // Bind field inputs
+    card.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
+      input.addEventListener('input', function () {
         state.slides[index][input.dataset.field] = input.value;
-        if (input.tagName === 'TEXTAREA') { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; }
+        if (input.tagName === 'TEXTAREA') {
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+        }
       });
-      // Auto-expand on render
-      if (input.tagName === 'TEXTAREA') { setTimeout(() => { input.style.height = 'auto'; input.style.height = input.scrollHeight + 'px'; }, 10); }
+      if (input.tagName === 'TEXTAREA') {
+        setTimeout(function () {
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+        }, 10);
+      }
     });
-    card.querySelector('input[type="checkbox"]').addEventListener('change', (e) => { state.slides[index].researchNeeded = e.target.checked; });
-    card.querySelector('.duplicate').addEventListener('click', () => { state.slides.splice(index + 1, 0, { ...state.slides[index] }); renderSlideOutline(); });
-    card.querySelector('.delete').addEventListener('click', () => {
-      if (state.slides.length <= 1) { toast('Cannot delete the only slide', 'warning'); return; }
-      state.slides.splice(index, 1); renderSlideOutline();
+
+    card.querySelector('input[type="checkbox"]').addEventListener('change', function (e) {
+      state.slides[index].researchNeeded = e.target.checked;
+    });
+
+    card.querySelector('.duplicate').addEventListener('click', function () {
+      var copy = {};
+      Object.keys(state.slides[index]).forEach(function (k) { copy[k] = state.slides[index][k]; });
+      state.slides.splice(index + 1, 0, copy);
+      renderSlideOutline();
+    });
+
+    card.querySelector('.delete').addEventListener('click', function () {
+      if (state.slides.length <= 1) {
+        toast('Cannot delete last slide', 'warning');
+        return;
+      }
+      state.slides.splice(index, 1);
+      renderSlideOutline();
     });
 
     return card;
   }
 
   function addSlide() {
-    state.slides.push({ slideNumber: state.slides.length + 1, actionTitle: '', description: '', visualSuggestion: '', researchNeeded: false });
+    state.slides.push({
+      slideNumber: state.slides.length + 1,
+      actionTitle: '',
+      description: '',
+      visualSuggestion: '',
+      researchNeeded: false
+    });
     renderSlideOutline();
   }
 
   function setupDragAndDrop() {
-    let dragIndex = null;
-    $$('.slide-card').forEach(card => {
-      card.addEventListener('dragstart', (e) => { dragIndex = parseInt(card.dataset.index); card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-      card.addEventListener('dragend', () => { card.classList.remove('dragging'); $$('.slide-card').forEach(c => c.classList.remove('drag-over')); });
-      card.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('drag-over'); });
-      card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
-      card.addEventListener('drop', (e) => {
-        e.preventDefault(); card.classList.remove('drag-over');
-        const dropIndex = parseInt(card.dataset.index);
-        if (dragIndex !== null && dragIndex !== dropIndex) {
-          const [moved] = state.slides.splice(dragIndex, 1);
-          state.slides.splice(dropIndex, 0, moved);
+    var dragIdx = null;
+    $$('.slide-card').forEach(function (card) {
+      card.addEventListener('dragstart', function (e) {
+        dragIdx = parseInt(card.dataset.index);
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      card.addEventListener('dragend', function () {
+        card.classList.remove('dragging');
+        $$('.slide-card').forEach(function (c) { c.classList.remove('drag-over'); });
+      });
+      card.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        card.classList.add('drag-over');
+      });
+      card.addEventListener('dragleave', function () {
+        card.classList.remove('drag-over');
+      });
+      card.addEventListener('drop', function (e) {
+        e.preventDefault();
+        card.classList.remove('drag-over');
+        var di = parseInt(card.dataset.index);
+        if (dragIdx !== null && dragIdx !== di) {
+          var moved = state.slides.splice(dragIdx, 1)[0];
+          state.slides.splice(di, 0, moved);
           renderSlideOutline();
         }
       });
     });
   }
 
-  // --- Timers ---
-  function startGenTimer() {
-    state.genSeconds = 0;
-    const el = $('#gen-timer');
-    el.textContent = '0:00';
-    state.genTimer = setInterval(() => {
-      state.genSeconds++;
-      const m = Math.floor(state.genSeconds / 60);
-      const s = state.genSeconds % 60;
-      el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
-    }, 1000);
-  }
-
-  function stopGenTimer() { if (state.genTimer) { clearInterval(state.genTimer); state.genTimer = null; } }
-
-  function formatDuration(secs) {
-    if (secs < 60) return `${secs}s`;
-    return `${Math.floor(secs / 60)}m ${secs % 60}s`;
-  }
-
-  // --- Step 4: Generation ---
+  // === STEP 3: GENERATION ===
   async function startGeneration() {
-    state.slides.forEach((s, i) => s.slideNumber = i + 1);
-    // Track outline editing time
-    if (state.stepStartTime) state.timings.outline = Math.round((Date.now() - state.stepStartTime) / 1000);
-    state.stepStartTime = Date.now();
-
-    updateStep(4);
-    renderGenerationProgress();
-    startGenTimer();
-    const logEl = $('#gen-log');
-    logEl.textContent = '';
-
-    // Mark first slide as current
-    const firstItem = $(`.gen-slide-item[data-slide="1"]`);
-    if (firstItem) {
-      firstItem.classList.add('current');
-      firstItem.querySelector('.gen-slide-status').className = 'gen-slide-status status-progress';
+    state.slides.forEach(function (s, i) { s.slideNumber = i + 1; });
+    if (state.stepStartTime) {
+      state.timings.outline = Math.round((Date.now() - state.stepStartTime) / 1000);
     }
+    state.stepStartTime = Date.now();
+    updateStep(3);
 
-    const body = {
+    // Reset UI
+    $('#gen-actions-running').hidden = false;
+    $('#gen-actions-done').hidden = true;
+    $('#gen-status-banner').className = 'gen-status-banner';
+    $('#gen-status-text').textContent = 'Generating presentation...';
+    $('#gen-status-detail').textContent = 'Connecting to Claude';
+    $('#gen-status-icon').innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div>';
+    state.genLastLogTime = Date.now();
+    var logEl = $('#gen-log');
+    logEl.textContent = '';
+    startTimer('gen-timer');
+
+    var body = {
       slides: state.slides,
       language: state.language,
       styles: getEnabledStyles(),
-      uploadedFiles: state.uploadedFiles.map(f => f.storedName),
+      uploadedFiles: state.uploadedFiles.map(function (f) { return f.storedName; }),
       defaultInstructions: $('#default-instructions').value
     };
 
+    // Only pass custom palette/font if user explicitly enabled customization
+    if (state.customizeColorsFont) {
+      var selectedPalette = PALETTES.find(function (p) { return p.id === state.palette; }) || PALETTES[0];
+      body.palette = { name: selectedPalette.name, colors: selectedPalette.colors };
+      body.font = state.font;
+    }
+
     try {
-      const response = await fetch(`${API}/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      var response = await fetch(API + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
         buffer = lines.pop();
-        for (const line of lines) {
+        for (var idx = 0; idx < lines.length; idx++) {
+          var line = lines[idx];
           if (!line.startsWith('data: ')) continue;
-          try { handleGenerateEvent(JSON.parse(line.slice(6)), logEl); } catch (e) { /* skip */ }
+          try { handleGenerateEvent(JSON.parse(line.slice(6)), logEl); } catch (e) { /* ignore */ }
         }
       }
-      if (buffer.startsWith('data: ')) { try { handleGenerateEvent(JSON.parse(buffer.slice(6)), logEl); } catch (e) { /* skip */ } }
-    } catch (e) { toast('Generation failed: ' + e.message, 'error'); updateStep(3); }
+      if (buffer.startsWith('data: ')) {
+        try { handleGenerateEvent(JSON.parse(buffer.slice(6)), logEl); } catch (e) { /* ignore */ }
+      }
+    } catch (e) {
+      toast('Generation failed: ' + e.message, 'error');
+    }
+    stopTimer('gen');
   }
 
   function handleGenerateEvent(event, logEl) {
     switch (event.type) {
-      case 'started': state.activeRequestId = event.requestId; break;
-      case 'log': logEl.textContent += event.message + '\n'; logEl.scrollTop = logEl.scrollHeight; break;
-      case 'slide_complete': markSlideComplete(event.slideNumber); break;
+      case 'started':
+        state.activeRequestId = event.requestId;
+        $('#gen-status-detail').textContent = 'Claude is working...';
+        break;
+      case 'log':
+        logEl.textContent += event.message + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
+        state.genLastLogTime = Date.now();
+        // Update status detail based on log content
+        if (event.message.includes('>>> Write')) {
+          $('#gen-status-detail').textContent = 'Writing generation script...';
+        } else if (event.message.includes('>>> Bash')) {
+          $('#gen-status-detail').textContent = 'Executing script...';
+        } else if (event.message.includes('SLIDE_COMPLETE')) {
+          var m = event.message.match(/SLIDE_COMPLETE::(\d+)/);
+          if (m) $('#gen-status-detail').textContent = 'Slide ' + m[1] + ' of ' + state.slides.length + ' complete';
+        } else if (event.message.includes('>>> Edit')) {
+          $('#gen-status-detail').textContent = 'Fixing script...';
+        } else if (event.message.includes('Presentation saved')) {
+          $('#gen-status-detail').textContent = 'Saving presentation...';
+        }
+        break;
       case 'done':
-        stopGenTimer();
+        stopTimer('gen');
         state.timings.generate = state.genSeconds || 0;
         state.timings.total = state.timings.analyze + state.timings.outline + state.timings.generate;
-        state.generatedFilename = event.filename; state.activeRequestId = null;
-        showPreview(event.filename); loadOutputFiles();
-        toast(`Presentation generated in ${formatDuration(state.timings.generate)}!`, 'success'); break;
-      case 'error':
-        stopGenTimer();
+        state.generatedFilename = event.filename;
         state.activeRequestId = null;
-        logEl.textContent += '\n\n=== ERROR ===\n' + event.message + '\n';
+        // Update status banner to done state
+        $('#gen-status-banner').className = 'gen-status-banner done';
+        $('#gen-status-text').textContent = 'Generation complete';
+        $('#gen-status-detail').textContent = state.slides.length + ' slides in ' + formatDuration(state.timings.generate);
+        $('#gen-status-icon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--success)" stroke-width="2"/><path d="M7 12l3 3 7-7" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        // Show done banner, hide cancel
+        $('#gen-actions-running').hidden = true;
+        $('#gen-actions-done').hidden = false;
+        $('#gen-done-meta').textContent = state.slides.length + ' slides | ' + formatDuration(state.timings.generate) + ' | ' + (event.filename || '');
+        loadOutputFiles();
+        toast('Presentation generated!', 'success');
+        break;
+      case 'error':
+        stopTimer('gen');
+        state.activeRequestId = null;
+        $('#gen-status-banner').className = 'gen-status-banner';
+        $('#gen-status-banner').style.borderColor = 'var(--error)';
+        $('#gen-status-banner').style.background = 'var(--error-light)';
+        $('#gen-status-text').textContent = 'Generation failed';
+        $('#gen-status-detail').textContent = event.message.slice(0, 100);
+        $('#gen-status-icon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--error)" stroke-width="2"/><path d="M8 8l8 8M16 8l-8 8" stroke="var(--error)" stroke-width="2" stroke-linecap="round"/></svg>';
+        logEl.textContent += '\n=== ERROR ===\n' + event.message + '\n';
         logEl.scrollTop = logEl.scrollHeight;
-        toast('Generation error: ' + event.message, 'error');
+        toast('Error: ' + event.message, 'error');
         break;
     }
   }
 
-  function renderGenerationProgress() {
-    $('#gen-slides-list').innerHTML = state.slides.map(s => `
-      <div class="gen-slide-item" data-slide="${s.slideNumber}">
-        <span class="gen-slide-status status-pending"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/></svg></span>
-        <span class="gen-slide-title">Slide ${s.slideNumber}: ${escapeHtml(s.actionTitle)}</span>
-        <span class="gen-slide-label"></span>
-      </div>
-    `).join('');
-    $('#gen-progress-bar').style.width = '0%';
-    $('#gen-progress-label').textContent = 'Starting...';
-  }
-
-  function markSlideComplete(slideNumber) {
-    const item = $(`.gen-slide-item[data-slide="${slideNumber}"]`);
-    if (item) {
-      item.classList.remove('current');
-      const st = item.querySelector('.gen-slide-status');
-      st.className = 'gen-slide-status status-complete';
-      st.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 8l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      const label = item.querySelector('.gen-slide-label');
-      if (label) label.textContent = '';
-    }
-
-    const next = $(`.gen-slide-item[data-slide="${slideNumber + 1}"]`);
-    if (next) {
-      next.classList.add('current');
-      next.querySelector('.gen-slide-status').className = 'gen-slide-status status-progress';
-      const nextLabel = next.querySelector('.gen-slide-label');
-      if (nextLabel) nextLabel.textContent = 'Generating...';
-      // Auto-scroll to current slide in the list
-      next.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    const completed = $$('.gen-slide-status.status-complete').length;
-    const pct = Math.round((completed / state.slides.length) * 100);
-    $('#gen-progress-bar').style.width = `${pct}%`;
-    $('#gen-progress-label').textContent = `Slide ${completed} of ${state.slides.length}`;
-  }
-
   async function cancelGeneration() {
-    stopGenTimer();
-    if (state.activeRequestId) { try { await fetch(`${API}/cancel/${state.activeRequestId}`, { method: 'POST' }); toast('Cancelled', 'warning'); } catch (e) { /* ignore */ } state.activeRequestId = null; }
-    updateStep(3);
+    stopTimer('gen');
+    if (state.activeRequestId) {
+      try {
+        await fetch(API + '/cancel/' + state.activeRequestId, { method: 'POST' });
+        toast('Cancelled', 'warning');
+      } catch (e) { /* ignore */ }
+      state.activeRequestId = null;
+    }
+    updateStep(2);
+    if (state.slides.length > 0) {
+      $('#outline-analyzing').hidden = true;
+      $('#outline-ready').hidden = false;
+      renderSlideOutline();
+    }
   }
 
-  // --- Step 5: Preview ---
-  function showPreview(filename) {
-    updateStep(5);
-    state.generatedFilename = filename;
+  // === STEP 4: RESULT ===
+  function renderResult() {
+    if (!state.generatedFilename) return;
     state.slideComments = {};
-    state.slidePreviewUrls = [];
+    $('#preview-file-name').textContent = state.generatedFilename;
+    $('#preview-file-meta').textContent = state.slides.length + ' slides';
+    $('#output-hint').textContent = './outputs/' + state.generatedFilename;
 
-    $('#preview-filename').textContent = 'Your presentation is ready';
-    $('#preview-file-name').textContent = filename;
-    $('#preview-file-meta').textContent = `${state.slides.length} slides`;
-    $('#output-hint').textContent = `./outputs/${filename}`;
+    $('#time-breakdown').innerHTML =
+      '<div class="time-chip">Total: <span class="time-val">' + formatDuration(state.timings.total) + '</span></div>' +
+      '<div class="time-chip">Analysis: <span class="time-val">' + formatDuration(state.timings.analyze) + '</span></div>' +
+      '<div class="time-chip">Editing: <span class="time-val">' + formatDuration(state.timings.outline) + '</span></div>' +
+      '<div class="time-chip">Generation: <span class="time-val">' + formatDuration(state.timings.generate) + '</span></div>';
 
-    // Time breakdown
-    const tb = $('#time-breakdown');
-    tb.innerHTML = `
-      <div class="time-chip">Total: <span class="time-val">${formatDuration(state.timings.total)}</span></div>
-      <div class="time-chip">Analysis: <span class="time-val">${formatDuration(state.timings.analyze)}</span></div>
-      <div class="time-chip">Editing: <span class="time-val">${formatDuration(state.timings.outline)}</span></div>
-      <div class="time-chip">Generation: <span class="time-val">${formatDuration(state.timings.generate)}</span></div>
-    `;
-
-    // Slide-by-slide review
-    renderSlideReview();
-    loadSlidePreview(filename);
-    renderRevisionHistory();
+    loadSlideViewer(state.generatedFilename);
   }
 
-  function renderSlideReview() {
-    const list = $('#slide-review-list');
-    list.innerHTML = state.slides.map(s => `
-      <div class="slide-review-item" id="slide-review-${s.slideNumber}">
-        <span class="slide-review-num">${s.slideNumber}</span>
-        <div class="slide-review-preview">
-          <div class="slide-preview-placeholder" data-slide="${s.slideNumber}">Loading preview...</div>
-        </div>
-        <div class="slide-review-right">
-          <div class="slide-review-info">
-            <div class="slide-review-title">${escapeHtml(s.actionTitle || '')}</div>
-            <div class="slide-review-desc">${escapeHtml((s.description || '').slice(0, 120))}</div>
-          </div>
-          <textarea class="slide-review-comment" data-slide="${s.slideNumber}" placeholder="Revision note..."></textarea>
-        </div>
-      </div>
-    `).join('');
-
-    list.querySelectorAll('.slide-review-comment').forEach(ta => {
-      ta.addEventListener('input', () => { state.slideComments[ta.dataset.slide] = ta.value; });
-    });
-  }
-
-  async function loadSlidePreview(filename) {
+  async function loadSlideViewer(filename) {
+    var viewer = $('#slide-viewer');
+    viewer.innerHTML = '<div class="slide-viewer-loading">Rendering slide previews...</div>';
     try {
-      const res = await fetch(`${API}/preview/${filename}`);
-      const data = await res.json();
+      var res = await fetch(API + '/preview/' + filename);
+      var data = await res.json();
       if (data.slides && data.slides.length > 0) {
         state.slidePreviewUrls = data.slides;
-        data.slides.forEach((url, i) => {
-          const placeholder = $(`.slide-preview-placeholder[data-slide="${i + 1}"]`);
-          if (placeholder) {
-            placeholder.outerHTML = `<img class="slide-preview-img" src="${url}" alt="Slide ${i + 1}" data-slide-index="${i}" loading="lazy">`;
-          }
-        });
+        viewer.innerHTML = data.slides.map(function (url, i) {
+          var slide = state.slides[i] || {};
+          return '<div class="slide-viewer-item" id="slide-view-' + (i + 1) + '">' +
+            '<img class="slide-viewer-img" src="' + url + '" alt="Slide ' + (i + 1) + '" data-index="' + i + '" loading="lazy">' +
+            '<div class="slide-viewer-bar">' +
+              '<span class="slide-viewer-num">' + (i + 1) + '</span>' +
+              '<span class="slide-viewer-title">' + escapeHtml(slide.actionTitle || 'Slide ' + (i + 1)) + '</span>' +
+            '</div>' +
+            '<div style="padding:8px 16px 12px">' +
+              '<textarea class="slide-viewer-comment" data-slide="' + (i + 1) + '" placeholder="Revision note for this slide..."></textarea>' +
+            '</div>' +
+          '</div>';
+        }).join('');
 
-        // Bind click-to-open-modal on preview images
-        $$('.slide-preview-img').forEach(img => {
-          img.addEventListener('click', () => {
-            const idx = parseInt(img.dataset.slideIndex);
-            openSlideModal(idx);
+        viewer.querySelectorAll('.slide-viewer-img').forEach(function (img) {
+          img.addEventListener('click', function () {
+            openSlideModal(parseInt(img.dataset.index));
           });
-          img.style.cursor = 'pointer';
         });
 
-        // Render carousel
-        renderCarousel(data.slides);
+        viewer.querySelectorAll('.slide-viewer-comment').forEach(function (ta) {
+          ta.addEventListener('input', function () {
+            state.slideComments[ta.dataset.slide] = ta.value;
+          });
+        });
       } else {
-        state.slidePreviewUrls = [];
-        $$('.slide-preview-placeholder').forEach(el => { el.textContent = 'Preview unavailable'; });
+        viewer.innerHTML = '<div class="slide-viewer-loading">Preview not available</div>';
       }
     } catch (e) {
-      state.slidePreviewUrls = [];
-      $$('.slide-preview-placeholder').forEach(el => { el.textContent = 'Preview unavailable'; });
+      viewer.innerHTML = '<div class="slide-viewer-loading">Preview rendering failed</div>';
     }
   }
 
-  // --- Slide carousel ---
-  function renderCarousel(urls) {
-    const carousel = $('#slide-carousel');
-    if (!carousel || !urls.length) return;
-    carousel.innerHTML = urls.map((url, i) => `
-      <div class="carousel-thumb${i === 0 ? ' active' : ''}" data-index="${i}">
-        <img src="${url}" alt="Slide ${i + 1}">
-        <span class="carousel-num">${i + 1}</span>
-      </div>
-    `).join('');
-
-    carousel.querySelectorAll('.carousel-thumb').forEach(thumb => {
-      thumb.addEventListener('click', () => {
-        const idx = parseInt(thumb.dataset.index);
-        // Update active state
-        carousel.querySelectorAll('.carousel-thumb').forEach(t => t.classList.remove('active'));
-        thumb.classList.add('active');
-        // Scroll to corresponding slide review
-        const reviewItem = $(`#slide-review-${idx + 1}`);
-        if (reviewItem) reviewItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-    });
-  }
-
-  // --- Fullscreen slide modal ---
+  // === FULLSCREEN MODAL ===
   function openSlideModal(index) {
-    if (!state.slidePreviewUrls.length) return;
     state.modalSlideIndex = index;
-    updateSlideModal();
     $('#slide-modal').hidden = false;
+    document.body.style.overflow = 'hidden';
+    updateSlideModal();
   }
 
   function closeSlideModal() {
     $('#slide-modal').hidden = true;
+    document.body.style.overflow = '';
   }
 
   function updateSlideModal() {
-    const url = state.slidePreviewUrls[state.modalSlideIndex];
-    if (!url) return;
-    $('#slide-modal-img').src = url;
-    $('#slide-modal-counter').textContent = `${state.modalSlideIndex + 1} / ${state.slidePreviewUrls.length}`;
+    var url = state.slidePreviewUrls[state.modalSlideIndex];
+    if (url) {
+      $('#slide-modal-img').src = url;
+    }
+    $('#slide-modal-counter').textContent = 'Slide ' + (state.modalSlideIndex + 1) + ' of ' + state.slidePreviewUrls.length;
+    $('#slide-modal-prev').style.visibility = state.modalSlideIndex === 0 ? 'hidden' : 'visible';
+    $('#slide-modal-next').style.visibility = state.modalSlideIndex >= state.slidePreviewUrls.length - 1 ? 'hidden' : 'visible';
   }
 
-  // --- Download ---
+  // === DOWNLOAD ===
   function downloadFile() {
     if (!state.generatedFilename) return;
-    const a = document.createElement('a');
-    a.href = `${API}/outputs/${state.generatedFilename}`;
+    var a = document.createElement('a');
+    a.href = API + '/outputs/' + state.generatedFilename;
     a.download = state.generatedFilename;
     a.click();
   }
 
-  // --- Revisions ---
-  function renderRevisionHistory() {
-    const historyEl = $('#revision-history');
-    if (!historyEl) return;
-    historyEl.innerHTML = state.revisions.map(r => `
-      <div class="revision-item">
-        <span class="revision-time">${r.time}</span>
-        <span class="revision-text">${escapeHtml(r.text)}</span>
-        <span class="revision-status ${r.status}">${r.status === 'done' ? 'Completed' : 'In progress'}</span>
-      </div>
-    `).join('');
-    const countEl = $('#revision-count');
-    if (countEl) countEl.textContent = state.revisions.length;
+  // === STYLE CHANGE ON RESULT ===
+  function promptStyleRevision(changeDescription) {
+    // Pre-fill the refine sidebar and open it
+    $('#refine-sidebar').classList.remove('collapsed');
+    var current = $('#refine-input').value;
+    var newInstr = 'Apply visual update: ' + changeDescription + '. Regenerate the PPTX with the updated style/colors while keeping all content identical.';
+    $('#refine-input').value = current ? current + '\n\n' + newInstr : newInstr;
+    $('#refine-context').textContent = 'Style changed — click Apply to update the presentation.';
+    toast('Style changed — use Refine to apply to your deck', 'info');
   }
 
-  async function startRevision() {
-    const instructions = state.refineInstructions || '';
+  // === VISUAL QA ===
+  async function runVisualQA() {
+    if (!state.generatedFilename) { toast('No presentation to QA', 'warning'); return; }
 
-    if (!instructions.trim()) { toast('Please add revision notes', 'warning'); return; }
+    var qaBtn = $('#btn-visual-qa');
+    var qaResult = $('#qa-result');
+    qaBtn.disabled = true;
+    qaBtn.textContent = 'Running QA...';
+    qaResult.hidden = true;
 
-    state.revisionCount++;
-    const revision = { text: instructions.slice(0, 100), time: new Date().toLocaleTimeString(), status: 'in-progress' };
-    state.revisions.push(revision);
-    renderRevisionHistory();
+    try {
+      var response = await fetch(API + '/qa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: state.generatedFilename,
+          slides: state.slides,
+          styles: getEnabledStyles()
+        })
+      });
 
-    updateStep(4);
-    renderGenerationProgress();
-    startGenTimer();
-    const logEl = $('#gen-log');
-    logEl.textContent = '';
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      var qaData = null;
 
-    // Mark first slide as current
-    const firstItem = $(`.gen-slide-item[data-slide="1"]`);
-    if (firstItem) {
-      firstItem.classList.add('current');
-      firstItem.querySelector('.gen-slide-status').className = 'gen-slide-status status-progress';
-      const label = firstItem.querySelector('.gen-slide-label');
-      if (label) label.textContent = 'Generating...';
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (var i = 0; i < lines.length; i++) {
+          if (!lines[i].startsWith('data: ')) continue;
+          try {
+            var event = JSON.parse(lines[i].slice(6));
+            if (event.type === 'qa_result') qaData = event.data;
+            else if (event.type === 'log') { /* ignore QA logs */ }
+          } catch (e) {}
+        }
+      }
+
+      if (qaData) {
+        renderQAResult(qaData);
+      } else {
+        toast('QA check returned no result', 'warning');
+      }
+    } catch (e) {
+      toast('QA failed: ' + e.message, 'error');
     }
 
-    const body = {
-      filename: state.generatedFilename, instructions, language: state.language,
-      styles: getEnabledStyles(), uploadedFiles: state.revisionFiles.map(f => f.storedName),
+    qaBtn.disabled = false;
+    qaBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11v-1m0-4v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg> Run Visual QA Check';
+  }
+
+  function renderQAResult(data) {
+    var qaResult = $('#qa-result');
+    var scoreClass = data.overallScore >= 8 ? 'excellent' : data.overallScore >= 6 ? 'good' : data.overallScore >= 4 ? 'needs-work' : 'poor';
+
+    var issuesHtml = '';
+    if (data.issues && data.issues.length > 0) {
+      issuesHtml = '<div class="qa-section-title">Issues</div>' +
+        data.issues.map(function (iss) {
+          var sev = iss.severity === 'error' ? 'error' : iss.severity === 'warning' ? 'warning' : 'info';
+          return '<div class="qa-issue ' + sev + '"><span class="qa-issue-badge">' + (iss.slide ? 'Slide ' + iss.slide : '') + ' ' + sev + '</span> ' + escapeHtml(iss.issue) + '</div>';
+        }).join('');
+    }
+
+    var strengthsHtml = '';
+    if (data.strengths && data.strengths.length > 0) {
+      strengthsHtml = '<div class="qa-section-title">Strengths</div><ul class="qa-list">' +
+        data.strengths.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>';
+    }
+
+    var suggestionsHtml = '';
+    if (data.suggestions && data.suggestions.length > 0) {
+      suggestionsHtml = '<div class="qa-section-title">Suggestions</div><ul class="qa-list">' +
+        data.suggestions.map(function (s) { return '<li style="color:var(--accent)">' + escapeHtml(s) + '</li>'; }).join('') + '</ul>';
+    }
+
+    qaResult.innerHTML =
+      '<div class="qa-score-row">' +
+        '<div class="qa-score-circle ' + scoreClass + '">' + data.overallScore + '</div>' +
+        '<div><div class="qa-verdict">' + escapeHtml(data.overallVerdict || '') + '</div><div style="font-size:13px;color:var(--text-secondary)">' + (data.issues ? data.issues.length : 0) + ' issues found</div></div>' +
+      '</div>' +
+      issuesHtml + strengthsHtml + suggestionsHtml;
+
+    qaResult.hidden = false;
+    qaResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // === REVISIONS ===
+  async function startRevision() {
+    var globalInstr = state.refineInstructions || '';
+    var slideNotes = Object.entries(state.slideComments)
+      .filter(function (entry) { return entry[1].trim(); })
+      .map(function (entry) { return '- Slide ' + entry[0] + ': ' + entry[1].trim(); })
+      .join('\n');
+    var instructions = [globalInstr, slideNotes].filter(Boolean).join('\n\n## Per-slide notes:\n');
+    if (!instructions.trim()) {
+      toast('Please add revision notes', 'warning');
+      return;
+    }
+
+    state.revisionCount++;
+    state.revisions.push({
+      text: instructions.slice(0, 80),
+      time: new Date().toLocaleTimeString(),
+      status: 'in-progress'
+    });
+
+    updateStep(3);
+    $('#gen-actions-running').hidden = false;
+    $('#gen-actions-done').hidden = true;
+    $('#gen-status-banner').className = 'gen-status-banner';
+    $('#gen-status-text').textContent = 'Revising presentation...';
+    $('#gen-status-detail').textContent = 'Connecting to Claude';
+    $('#gen-status-icon').innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div>';
+    state.genLastLogTime = Date.now();
+    var logEl = $('#gen-log');
+    logEl.textContent = '';
+    startTimer('gen-timer');
+
+    var body = {
+      filename: state.generatedFilename,
+      instructions: instructions,
+      language: state.language,
+      styles: getEnabledStyles(),
+      uploadedFiles: [],
       revisionNumber: state.revisionCount
     };
 
     try {
-      const response = await fetch(`${API}/revise`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      var response = await fetch(API + '/revise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
         buffer = lines.pop();
-        for (const line of lines) { if (line.startsWith('data: ')) { try { handleGenerateEvent(JSON.parse(line.slice(6)), logEl); } catch (e) { /* skip */ } } }
+        for (var idx = 0; idx < lines.length; idx++) {
+          var line = lines[idx];
+          if (line.startsWith('data: ')) {
+            try { handleGenerateEvent(JSON.parse(line.slice(6)), logEl); } catch (e) { /* ignore */ }
+          }
+        }
       }
-      if (buffer.startsWith('data: ')) { try { handleGenerateEvent(JSON.parse(buffer.slice(6)), logEl); } catch (e) { /* skip */ } }
-      revision.status = 'done'; renderRevisionHistory();
-    } catch (e) { toast('Revision failed: ' + e.message, 'error'); revision.status = 'done'; renderRevisionHistory(); updateStep(5); }
-
+      if (buffer.startsWith('data: ')) {
+        try { handleGenerateEvent(JSON.parse(buffer.slice(6)), logEl); } catch (e) { /* ignore */ }
+      }
+      state.revisions[state.revisions.length - 1].status = 'done';
+    } catch (e) {
+      toast('Revision failed: ' + e.message, 'error');
+      state.revisions[state.revisions.length - 1].status = 'done';
+    }
     state.refineInstructions = '';
-    state.revisionFiles = [];
-    renderRevisionFiles();
+    stopTimer('gen');
   }
 
-  // --- Utilities ---
-  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+  // === UTILITIES ===
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
   function formatSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
-  function toast(message, type = 'info') {
-    const el = document.createElement('div');
-    el.className = `toast ${type}`;
+  function toast(message, type) {
+    if (!type) type = 'info';
+    var el = document.createElement('div');
+    el.className = 'toast ' + type;
     el.textContent = message;
     $('#toast-container').appendChild(el);
-    setTimeout(() => { el.classList.add('removing'); setTimeout(() => el.remove(), 200); }, 4000);
+    setTimeout(function () {
+      el.classList.add('removing');
+      setTimeout(function () { el.remove(); }, 200);
+    }, 4000);
   }
-
 })();

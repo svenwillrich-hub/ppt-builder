@@ -10,8 +10,19 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Initialization overlay -->
+  <div id="init-overlay" class="init-overlay">
+    <div class="init-content">
+      <div class="spinner" style="width:48px;height:48px;border-width:3px"></div>
+      <h2 class="logo">PPTX Creator</h2>
+      <p id="init-status">Checking Claude CLI connection...</p>
+      <button id="init-retry" class="btn btn-primary" hidden>Retry</button>
+      <a href="#" id="init-skip" style="display:none;margin-top:8px;font-size:12px;color:var(--text-muted)">Skip check</a>
+    </div>
+  </div>
+
   <div id="app">
-    <!-- Sidebar open button -->
+    <!-- Sidebar open button (hidden when sidebar visible) -->
     <button id="sidebar-open" class="sidebar-open-btn" title="Open sidebar" hidden>
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 6h12M4 10h12M4 14h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
     </button>
@@ -33,8 +44,33 @@
           </div>
         </div>
         <div class="sidebar-section">
-          <label class="section-label">Styles</label>
-          <div id="styles-list" class="styles-list"></div>
+          <label class="section-label">Skills</label>
+          <div id="skills-list" class="styles-list"></div>
+        </div>
+        <div class="sidebar-section">
+          <label class="customize-toggle">
+            <input type="checkbox" id="customize-colors-font">
+            <span>Customize colors & font</span>
+          </label>
+        </div>
+        <div id="customize-panel" class="customize-panel disabled">
+          <div class="sidebar-section">
+            <label class="section-label">Color Palette</label>
+            <div id="palette-list"></div>
+          </div>
+          <div class="sidebar-section">
+            <label class="section-label">Font</label>
+            <div class="font-selector" id="font-selector">
+              <button class="font-selector-trigger" id="font-trigger">
+                <span id="font-selected-name">Calibri</span>
+                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 5l3 3 3-3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+              </button>
+              <div class="font-dropdown" id="font-dropdown" hidden>
+                <input type="text" class="font-search" id="font-search" placeholder="Search fonts...">
+                <div class="font-options" id="font-options"></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="sidebar-section">
           <label class="section-label">Generated Files</label>
@@ -54,23 +90,21 @@
 
     <!-- Main Area -->
     <main id="main" class="main">
-      <!-- Refine toggle -->
+      <!-- Refine toggle button (top right) -->
       <button id="refine-toggle" class="refine-toggle-btn" title="Open Refine panel">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Refine
       </button>
 
-      <!-- Step Indicator (5 steps) -->
+      <!-- Step Indicator (4 steps) -->
       <div class="step-indicator" id="step-indicator">
         <div class="step" data-step="1"><span class="step-num">1</span><span class="step-label">Input</span></div>
         <div class="step-line"></div>
-        <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">Analyze</span></div>
+        <div class="step" data-step="2"><span class="step-num">2</span><span class="step-label">Outline</span></div>
         <div class="step-line"></div>
-        <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">Outline</span></div>
+        <div class="step" data-step="3"><span class="step-num">3</span><span class="step-label">Generate</span></div>
         <div class="step-line"></div>
-        <div class="step" data-step="4"><span class="step-num">4</span><span class="step-label">Generate</span></div>
-        <div class="step-line"></div>
-        <div class="step" data-step="5"><span class="step-num">5</span><span class="step-label">Result</span></div>
+        <div class="step" data-step="4"><span class="step-num">4</span><span class="step-label">Result</span></div>
       </div>
 
       <!-- Steps Container -->
@@ -117,92 +151,105 @@
           </div>
         </section>
 
-        <!-- Step 2: Analyzing -->
+        <!-- Step 2: Outline (combines analysis + outline editing) -->
         <section id="step-2" class="step-content">
-          <div id="analyze-in-progress">
+          <!-- During analysis: spinner + timer + status text -->
+          <div id="outline-analyzing">
             <div class="analyzing-container">
               <div class="spinner"></div>
-              <h2>Claude is analyzing your content...</h2>
+              <h2>Analyzing...</h2>
               <p class="subtitle" id="analyze-status-text">Connecting to Claude CLI...</p>
               <div class="analyze-timer" id="analyze-timer">0:00</div>
             </div>
           </div>
-          <div id="analyze-done" hidden>
-            <div class="analyzing-container">
-              <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" stroke="var(--success)" stroke-width="2"/><path d="M18 28l7 7 13-13" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <h2 style="margin-top:16px">Analysis Complete</h2>
-              <p class="subtitle" id="analyze-summary"></p>
+
+          <!-- After analysis: outline cards -->
+          <div id="outline-ready" hidden>
+            <div class="outline-header">
+              <h2>Slide Outline</h2>
+              <span class="slide-count" id="slide-count">0 slides</span>
             </div>
+            <!-- Analysis facts row -->
             <div class="analysis-facts" id="analysis-facts"></div>
-            <div class="step-actions" style="justify-content:center">
-              <button id="btn-back-to-input" class="btn btn-secondary">Back to Input</button>
-              <button id="btn-view-outline" class="btn btn-primary btn-lg">
-                View Outline
+
+            <div id="slides-grid" class="slides-grid"></div>
+            <button id="btn-add-slide-bottom" class="btn btn-ghost btn-add-slide">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12m-6-6h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Add Slide
+            </button>
+            <div class="step-actions sticky-bottom">
+              <button id="btn-back-to-input" class="btn btn-secondary">Back</button>
+              <button id="btn-generate" class="btn btn-primary btn-lg">
+                Generate PPTX
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
           </div>
+
+          <!-- Collapsible log (expanded during analysis, collapsed after) -->
           <div class="terminal-panel" id="analyze-terminal">
-            <div class="terminal-header"><span>Live Log</span></div>
+            <div class="terminal-header">
+              <span>Analysis Log</span>
+              <button class="terminal-toggle" id="analyze-log-toggle">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
             <div class="terminal-body" id="analyze-log"></div>
           </div>
         </section>
 
-        <!-- Step 3: Slide Outline Editor -->
+        <!-- Step 3: Generate -->
         <section id="step-3" class="step-content">
-          <div class="outline-header">
-            <h2>Slide Outline</h2>
-            <span class="slide-count" id="slide-count">0 slides</span>
+          <!-- Status banner -->
+          <div class="gen-status-banner" id="gen-status-banner">
+            <div class="gen-status-icon" id="gen-status-icon">
+              <div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div>
+            </div>
+            <div class="gen-status-info">
+              <span class="gen-status-text" id="gen-status-text">Generating presentation...</span>
+              <span class="gen-status-detail" id="gen-status-detail">Claude is writing the script</span>
+            </div>
+            <div class="gen-timer" id="gen-timer">0:00</div>
           </div>
-          <div id="slides-grid" class="slides-grid"></div>
-          <button id="btn-add-slide-bottom" class="btn btn-ghost btn-add-slide">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v12m-6-6h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Add Slide
-          </button>
-          <div class="step-actions sticky-bottom">
-            <button id="btn-generate" class="btn btn-primary btn-lg">
-              Confirm & Generate
+
+          <!-- Terminal log -->
+          <div class="terminal-panel" id="gen-terminal">
+            <div class="terminal-header">
+              <span>Live Log</span>
+              <button class="terminal-copy" id="gen-copy-log" title="Copy log">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3 11V3h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="terminal-body" id="gen-log"></div>
+          </div>
+
+          <!-- Actions -->
+          <div id="gen-actions-running" class="step-actions">
+            <button id="btn-cancel-gen" class="btn btn-danger">Cancel</button>
+          </div>
+          <div id="gen-actions-done" class="gen-done-banner" hidden>
+            <div class="gen-done-check">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="var(--success)" stroke-width="2"/><path d="M10 16l4 4 8-8" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="gen-done-info">
+              <span class="gen-done-title">Generation Complete</span>
+              <span class="gen-done-meta" id="gen-done-meta"></span>
+            </div>
+            <button id="btn-view-result" class="btn btn-primary btn-lg">
+              View Result
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10h12m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
         </section>
 
-        <!-- Step 4: Generation -->
+        <!-- Step 4: Result -->
         <section id="step-4" class="step-content">
-          <div class="generation-header">
-            <div class="gen-title-row">
-              <h2>Generating Presentation</h2>
-              <div class="gen-timer" id="gen-timer">0:00</div>
-            </div>
-            <div class="progress-bar-container">
-              <div class="progress-bar" id="gen-progress-bar"></div>
-              <span class="progress-label" id="gen-progress-label">Starting...</span>
-            </div>
-          </div>
-          <div class="generation-split">
-            <div class="gen-slides-list" id="gen-slides-list"></div>
-            <div class="terminal-panel" id="gen-terminal">
-              <div class="terminal-header">
-                <span>Live Log</span>
-                <button class="terminal-copy" id="gen-copy-log" title="Copy log">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3 11V3h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-                </button>
-              </div>
-              <div class="terminal-body" id="gen-log"></div>
-            </div>
-          </div>
-          <div class="step-actions">
-            <button id="btn-cancel-gen" class="btn btn-danger">Cancel</button>
-          </div>
-        </section>
-
-        <!-- Step 5: Result (Preview + Revisions) -->
-        <section id="step-5" class="step-content">
           <div class="preview-header">
             <h2>Presentation Ready</h2>
-            <p class="subtitle" id="preview-filename"></p>
           </div>
           <div class="time-breakdown" id="time-breakdown"></div>
+
+          <!-- Download bar -->
           <div class="preview-card" id="preview-card">
             <div class="preview-info-row">
               <div class="preview-icon">
@@ -219,22 +266,22 @@
             </div>
           </div>
 
-          <!-- Slide carousel -->
-          <div class="slide-carousel" id="slide-carousel"></div>
-
-          <!-- Slide-by-slide review -->
-          <div class="slide-review-section">
-            <div class="qa-header">
-              <h3>Slide Review</h3>
-              <span class="revision-badge" id="revision-count">0</span>
-            </div>
-            <div id="slide-review-list" class="slide-review-list"></div>
-            <div id="revision-history" class="revision-history"></div>
-            <p class="output-hint" id="output-hint"></p>
-            <button id="btn-new-presentation" class="btn btn-ghost btn-sm" style="margin-top: 16px; width: 100%;">
-              Start New Presentation
-            </button>
+          <!-- Vertical slide viewer (PDF-style) -->
+          <div class="slide-viewer" id="slide-viewer">
+            <div class="slide-viewer-loading">Loading slide previews...</div>
           </div>
+
+          <!-- QA Button -->
+          <div class="qa-bar">
+            <button id="btn-visual-qa" class="btn btn-secondary btn-lg" style="width:100%">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11v-1m0-4v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg>
+              Run Visual QA Check
+            </button>
+            <div id="qa-result" class="qa-result" hidden></div>
+          </div>
+
+          <p class="output-hint" id="output-hint"></p>
+          <button id="btn-new-presentation" class="btn btn-ghost btn-sm" style="margin-top:16px;width:100%">Start New Presentation</button>
         </section>
 
       </div>

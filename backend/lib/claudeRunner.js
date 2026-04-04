@@ -125,7 +125,11 @@ class ClaudeRunner {
       // Clean up temp file
       try { fs.unlinkSync(tmpFile); } catch (e) { /* ignore */ }
 
-      if (code === 0 || (textOutput.trim().length > 0)) {
+      if (code === 0) {
+        if (options.onComplete) options.onComplete(textOutput || output);
+      } else if (textOutput.trim().length > 0) {
+        // Non-zero exit but produced output — check if it looks like success
+        console.log(`[claude] Non-zero exit (${code}) but has output. Treating as success.`);
         if (options.onComplete) options.onComplete(textOutput || output);
       } else {
         const reason = signal ? `signal ${signal}` : `code ${code}`;

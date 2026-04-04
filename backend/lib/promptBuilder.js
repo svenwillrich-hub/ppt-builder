@@ -22,7 +22,7 @@ class PromptBuilder {
     const parts = [];
     try {
       const files = fs.readdirSync(skillsDir).filter(f =>
-        f.endsWith('.md') || f.endsWith('.txt')
+        f.endsWith('.skill') || f.endsWith('.md') || f.endsWith('.txt')
       );
       for (const file of files) {
         if (file === 'README.md') continue;
@@ -93,7 +93,7 @@ Return ONLY a valid JSON array with this structure for each slide:
 Do not include any text outside the JSON array.`;
   }
 
-  static buildGeneratePrompt({ slides, language, styles, uploadedFiles, defaultInstructions }) {
+  static buildGeneratePrompt({ slides, language, styles, uploadedFiles, defaultInstructions, palette, font }) {
     const styleInstructions = this.getStyleInstructions(styles || []);
     const skillContents = this.getSkillContents();
     const fileContents = this.getUploadedFileContents(uploadedFiles);
@@ -130,6 +130,10 @@ Do not include any text outside the JSON array.`;
 - Write the generation script to /tmp/ and execute it from there
 
 Language: ${language || 'english'}
+
+## Color & Typography Customization
+${palette ? `CUSTOM Color Palette: ${palette.name}\nColors (use for ALL accents, charts, backgrounds, headings):\n${palette.colors.map((c, i) => `  Color ${i + 1}: ${c}`).join('\n')}\nIMPORTANT: Override any skill-defined colors with these palette colors.` : 'Use the colors defined in the skill/style guidelines. If none specified, use a professional consulting color scheme.'}
+${font ? `\nCUSTOM Font: ${font}\nUse "${font}" for ALL text in the presentation (titles, body, labels). This overrides any skill-defined fonts.` : ''}
 
 ## Style Guidelines
 ${styleInstructions}

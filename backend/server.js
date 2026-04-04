@@ -30,6 +30,37 @@ const upload = multer({
 // Track active Claude processes for cancellation
 const activeProcesses = new Map();
 
+// Helper: find newly created PPTX with retry (waits for file write to flush)
+function findNewPptxFile(existingFiles, startTime, retries = 5, delayMs = 2000) {
+  return new Promise(async (resolve) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const currentFiles = fs.readdirSync('/app/outputs').filter(f => f.endsWith('.pptx'));
+        const newFiles = currentFiles.filter(f => {
+          if (existingFiles.has(f)) return false;
+          try {
+            const stat = fs.statSync(path.join('/app/outputs', f));
+            return stat.mtimeMs > startTime;
+          } catch (e) { return false; }
+        });
+        if (newFiles.length > 0) {
+          newFiles.sort((a, b) => {
+            const sa = fs.statSync(path.join('/app/outputs', a)).mtimeMs;
+            const sb = fs.statSync(path.join('/app/outputs', b)).mtimeMs;
+            return sb - sa;
+          });
+          return resolve(newFiles[0]);
+        }
+      } catch (e) { /* ignore */ }
+      if (attempt < retries - 1) {
+        console.log(`[findFile] Attempt ${attempt + 1}/${retries} — no new file yet, retrying in ${delayMs}ms`);
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    resolve(null);
+  });
+}
+
 // --- Health check ---
 app.get('/api/status', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -38,88 +69,79 @@ app.get('/api/status', (req, res) => {
 // --- Claude CLI diagnostics ---
 app.get('/api/claude-test', async (req, res) => {
   const { execSync, spawnSync } = require('child_process');
-  const diagnostics = {
-    timestamp: new Date().toISOString(),
-    checks: {}
-  };
+  const homeDir = process.env.HOME || '/home/appuser';
+  const diagnostics = { timestamp: new Date().toISOString(), checks: {} };
 
-  // 1. Check if claude binary exists
+  // 1. Binary
   try {
     const which = execSync('which claude 2>/dev/null || command -v claude 2>/dev/null', { encoding: 'utf-8' }).trim();
     diagnostics.checks.binary = { ok: true, path: which };
-  } catch (e) {
-    diagnostics.checks.binary = { ok: false, error: 'claude binary not found in PATH' };
-  }
+  } catch (e) { diagnostics.checks.binary = { ok: false, error: 'claude not in PATH' }; }
 
-  // 2. Check claude version
+  // 2. Version
   try {
     const version = execSync('claude --version 2>&1', { encoding: 'utf-8', timeout: 10000 }).trim();
     diagnostics.checks.version = { ok: true, version };
-  } catch (e) {
-    diagnostics.checks.version = { ok: false, error: e.message };
-  }
+  } catch (e) { diagnostics.checks.version = { ok: false, error: e.message }; }
 
-  // 3. Check config file
+  // 3. Config file
   try {
-    const configExists = fs.existsSync('/root/.claude.json');
+    const configPath = path.join(homeDir, '.claude.json');
+    const configExists = fs.existsSync(configPath);
     let configContent = null;
     if (configExists) {
-      const raw = JSON.parse(fs.readFileSync('/root/.claude.json', 'utf-8'));
-      // Only show safe keys
+      const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
       configContent = {
-        hasOauthToken: !!raw.oauthToken,
         hasApiKey: !!raw.apiKey,
         primaryEmail: raw.primaryEmail || null,
-        claudeAiOauth: raw.claudeAiOauth ? {
-          expiresAt: raw.claudeAiOauth.expiresAt,
-          hasAccessToken: !!raw.claudeAiOauth.accessToken,
-          hasRefreshToken: !!raw.claudeAiOauth.refreshToken
-        } : null
+        hasOauth: !!(raw.claudeAiOauth && raw.claudeAiOauth.accessToken)
       };
     }
     diagnostics.checks.config = { ok: configExists, exists: configExists, parsed: configContent };
-  } catch (e) {
-    diagnostics.checks.config = { ok: false, error: e.message };
-  }
+  } catch (e) { diagnostics.checks.config = { ok: false, error: e.message }; }
 
-  // 4. Check .claude directory
+  // 4. .claude directory
   try {
-    const dirExists = fs.existsSync('/root/.claude');
-    let contents = [];
-    if (dirExists) {
-      contents = fs.readdirSync('/root/.claude').slice(0, 20);
-    }
-    diagnostics.checks.claudeDir = { ok: dirExists, exists: dirExists, contents };
-  } catch (e) {
-    diagnostics.checks.claudeDir = { ok: false, error: e.message };
-  }
+    const claudeDir = path.join(homeDir, '.claude');
+    const dirExists = fs.existsSync(claudeDir);
+    diagnostics.checks.claudeDir = { ok: dirExists, exists: dirExists };
+  } catch (e) { diagnostics.checks.claudeDir = { ok: false, error: e.message }; }
 
-  // 5. Actual CLI test — run a trivial prompt
+  // 5. Actual CLI test
   try {
     const result = spawnSync('claude', ['-p', 'Reply with exactly: PPTX_TEST_OK', '--output-format', 'text'], {
-      env: process.env,
-      cwd: '/app',
-      encoding: 'utf-8',
-      timeout: 30000,
-      stdio: ['pipe', 'pipe', 'pipe']
+      env: process.env, cwd: '/app', encoding: 'utf-8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe']
     });
     const stdout = (result.stdout || '').trim();
-    const stderr = (result.stderr || '').trim();
     const success = result.status === 0 && stdout.includes('PPTX_TEST_OK');
-    diagnostics.checks.cliTest = {
-      ok: success,
-      exitCode: result.status,
-      stdout: stdout.slice(0, 500),
-      stderr: stderr.slice(0, 500)
-    };
-  } catch (e) {
-    diagnostics.checks.cliTest = { ok: false, error: e.message };
-  }
+    diagnostics.checks.cliTest = { ok: success, exitCode: result.status, stdout: stdout.slice(0, 200) };
+  } catch (e) { diagnostics.checks.cliTest = { ok: false, error: e.message }; }
 
-  // Overall status
   diagnostics.allOk = Object.values(diagnostics.checks).every(c => c.ok);
-
   res.json(diagnostics);
+});
+
+// --- Styles ---
+// --- Skills ---
+app.get('/api/skills', (req, res) => {
+  try {
+    const skillsDir = '/app/skills';
+    const files = fs.readdirSync(skillsDir)
+      .filter(f => f.endsWith('.skill'));
+    const skills = files.map(f => {
+      const content = fs.readFileSync(path.join(skillsDir, f), 'utf-8');
+      const nameMatch = content.match(/^#\s+(.+)/m);
+      return {
+        id: f.replace(/\.(md|txt)$/, ''),
+        filename: f,
+        name: nameMatch ? nameMatch[1] : f.replace(/\.(md|txt)$/, '').replace(/-/g, ' '),
+        enabled: true
+      };
+    });
+    res.json(skills);
+  } catch (e) {
+    res.json([]);
+  }
 });
 
 // --- Styles ---
@@ -240,6 +262,97 @@ app.get('/api/preview/:filename', async (req, res) => {
   }
 });
 
+// --- Visual QA ---
+app.post('/api/qa', (req, res) => {
+  const { filename, slides, styles } = req.body;
+  if (!filename) return res.status(400).json({ error: 'No filename provided' });
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const styleInfo = styles && styles.length > 0
+    ? `Selected styles: ${styles.join(', ')}`
+    : 'No specific style selected';
+
+  const slideInfo = slides && slides.length > 0
+    ? slides.map(s => `- Slide ${s.slideNumber}: "${s.actionTitle}"`).join('\n')
+    : '';
+
+  const prompt = `You are a presentation QA reviewer. Analyze the PPTX file at /app/outputs/${filename}
+
+## Environment
+- python-pptx is installed. Use it to read the PPTX file.
+- Read each slide's content, layout, and formatting.
+
+## Slide Outline (expected)
+${slideInfo}
+
+## Style Context
+${styleInfo}
+
+## QA Checklist — check ALL of these:
+1. **Content completeness**: Does each slide have an action title, body content, and visual elements as described?
+2. **Text quality**: Are there any placeholder texts, lorem ipsum, or incomplete sentences?
+3. **Formatting consistency**: Font sizes, colors, alignment consistent across slides?
+4. **Slide count**: Does the number of slides match the outline?
+5. **Visual elements**: Are charts/diagrams/tables actually created or just described as text?
+6. **Readability**: Is text legible (not too small, not overflowing)?
+7. **Professional quality**: Would this pass in a C-level consulting presentation?
+
+## Output Format
+Return a structured QA report as JSON:
+{
+  "overallScore": 8,        // 1-10
+  "overallVerdict": "Good", // "Excellent" | "Good" | "Needs Work" | "Poor"
+  "issues": [
+    { "slide": 1, "severity": "warning", "issue": "Description of issue" }
+  ],
+  "strengths": ["List of things done well"],
+  "suggestions": ["List of improvement suggestions"]
+}
+
+Return ONLY the JSON, no other text.`;
+
+  ClaudeRunner.run(prompt, res, {
+    onComplete: (output) => {
+      // Extract text content from stream-json
+      let textContent = '';
+      const lines = output.split('\n');
+      for (const line of lines) {
+        try {
+          const event = JSON.parse(line);
+          if (event.type === 'assistant' && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === 'text') textContent += block.text;
+            }
+          } else if (event.type === 'result' && event.result) {
+            textContent += (typeof event.result === 'string') ? event.result : '';
+          }
+        } catch (e) { textContent += line + '\n'; }
+      }
+
+      try {
+        const jsonMatch = textContent.match(/\{[\s\S]*?"overallScore"[\s\S]*?\}/);
+        if (jsonMatch) {
+          const qa = JSON.parse(jsonMatch[0]);
+          ClaudeRunner.sendSSE(res, { type: 'qa_result', data: qa });
+        } else {
+          ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', issues: [], strengths: [], suggestions: ['Could not parse QA result'], raw: textContent.slice(0, 500) } });
+        }
+      } catch (e) {
+        ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', issues: [], strengths: [], suggestions: [e.message] } });
+      }
+      res.end();
+    },
+    onError: () => { res.end(); }
+  });
+
+  req.on('close', () => {});
+});
+
 // Serve preview images
 app.get('/api/preview-image/:dir/:file', (req, res) => {
   const imgPath = path.join('/app/previews', req.params.dir, req.params.file);
@@ -349,43 +462,37 @@ app.post('/api/generate', (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
+  const { palette, font } = req.body;
   const prompt = PromptBuilder.buildGeneratePrompt({
-    slides, language, styles, uploadedFiles, defaultInstructions
+    slides, language, styles, uploadedFiles, defaultInstructions, palette, font
   });
 
-  const requestId = Date.now().toString();
-  const child = ClaudeRunner.run(prompt, res, {
-    onComplete: (output) => {
-      // Find the generated filename
-      const filenameMatch = output.match(/\/app\/outputs\/([\w\-\.]+\.pptx)/);
-      const filename = filenameMatch ? filenameMatch[1] : null;
+  // Track which files existed before generation
+  let existingFiles = new Set();
+  try { existingFiles = new Set(fs.readdirSync('/app/outputs').filter(f => f.endsWith('.pptx'))); } catch (e) {}
 
-      // Also check if file exists in outputs
-      let foundFile = filename;
-      if (!foundFile) {
-        try {
-          const files = fs.readdirSync('/app/outputs')
-            .filter(f => f.endsWith('.pptx'))
-            .sort((a, b) => {
-              const sa = fs.statSync(path.join('/app/outputs', a)).mtimeMs;
-              const sb = fs.statSync(path.join('/app/outputs', b)).mtimeMs;
-              return sb - sa;
-            });
-          if (files.length > 0) foundFile = files[0];
-        } catch (e) { /* ignore */ }
+  const requestId = Date.now().toString();
+  const startTime = Date.now();
+  const child = ClaudeRunner.run(prompt, res, {
+    onComplete: async (output) => {
+      // Wait for file to appear (retry-based to handle write flush delay)
+      let newFile = await findNewPptxFile(existingFiles, startTime);
+
+      // Fallback: try regex from output
+      if (!newFile) {
+        const m = output.match(/\/app\/outputs\/([\w\-\.]+\.pptx)/);
+        if (m && fs.existsSync(path.join('/app/outputs', m[1]))) newFile = m[1];
       }
 
-      ClaudeRunner.sendSSE(res, {
-        type: 'done',
-        filename: foundFile || 'unknown.pptx'
-      });
+      if (newFile) {
+        ClaudeRunner.sendSSE(res, { type: 'done', filename: newFile });
+      } else {
+        ClaudeRunner.sendSSE(res, { type: 'error', message: 'No new PPTX file found after generation. Check the log.' });
+      }
       activeProcesses.delete(requestId);
       res.end();
     },
-    onError: () => {
-      activeProcesses.delete(requestId);
-      res.end();
-    }
+    onError: () => { activeProcesses.delete(requestId); res.end(); }
   });
 
   activeProcesses.set(requestId, child);
@@ -420,36 +527,27 @@ app.post('/api/revise', (req, res) => {
     revisionNumber: revisionNumber || 1
   });
 
+  let existingFilesRevise = new Set();
+  try { existingFilesRevise = new Set(fs.readdirSync('/app/outputs').filter(f => f.endsWith('.pptx'))); } catch (e) {}
+  const revStartTime = Date.now();
+
   const requestId = Date.now().toString();
   const child = ClaudeRunner.run(prompt, res, {
-    onComplete: (output) => {
-      const filenameMatch = output.match(/\/app\/outputs\/([\w\-\.]+\.pptx)/);
-      let foundFile = filenameMatch ? filenameMatch[1] : null;
-
-      if (!foundFile) {
-        try {
-          const files = fs.readdirSync('/app/outputs')
-            .filter(f => f.endsWith('.pptx'))
-            .sort((a, b) => {
-              const sa = fs.statSync(path.join('/app/outputs', a)).mtimeMs;
-              const sb = fs.statSync(path.join('/app/outputs', b)).mtimeMs;
-              return sb - sa;
-            });
-          if (files.length > 0) foundFile = files[0];
-        } catch (e) { /* ignore */ }
+    onComplete: async (output) => {
+      let newFile = await findNewPptxFile(existingFilesRevise, revStartTime);
+      if (!newFile) {
+        const m = output.match(/\/app\/outputs\/([\w\-\.]+\.pptx)/);
+        if (m && fs.existsSync(path.join('/app/outputs', m[1]))) newFile = m[1];
       }
-
-      ClaudeRunner.sendSSE(res, {
-        type: 'done',
-        filename: foundFile || 'unknown.pptx'
-      });
+      if (newFile) {
+        ClaudeRunner.sendSSE(res, { type: 'done', filename: newFile });
+      } else {
+        ClaudeRunner.sendSSE(res, { type: 'error', message: 'No revised file found.' });
+      }
       activeProcesses.delete(requestId);
       res.end();
     },
-    onError: () => {
-      activeProcesses.delete(requestId);
-      res.end();
-    }
+    onError: () => { activeProcesses.delete(requestId); res.end(); }
   });
 
   activeProcesses.set(requestId, child);
