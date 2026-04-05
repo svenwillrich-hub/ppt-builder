@@ -530,6 +530,128 @@ app.post('/api/generate', async (req, res) => {
   });
 });
 
+// --- Enhance single slide ---
+app.post('/api/enhance', (req, res) => {
+  const { filename, slideNumber, language, styles, palette, font } = req.body;
+
+  if (!filename || !slideNumber) {
+    return res.status(400).json({ error: 'Filename and slideNumber are required' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const timestamp = Date.now();
+  const outputPath = `/app/outputs/.tmp-enhance-${timestamp}-slide-${slideNumber}.pptx`;
+
+  const prompt = PromptBuilder.buildEnhancePrompt({
+    filename, slideNumber, language, styles, palette, font, outputPath
+  });
+
+  const requestId = `enhance-${slideNumber}-${timestamp}`;
+  ClaudeRunner.sendSSE(res, { type: 'enhance_started', slideNumber });
+
+  const child = ClaudeRunner.run(prompt, res, {
+    onComplete: async (output) => {
+      if (fs.existsSync(outputPath)) {
+        // Replace the slide in the main PPTX
+        try {
+          const replaceScript = `
+import sys, copy
+from pptx import Presentation
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+
+main_prs = Presentation('/app/outputs/${filename}')
+new_prs = Presentation('${outputPath}')
+
+slide_idx = ${slideNumber - 1}
+if slide_idx < len(main_prs.slides) and len(new_prs.slides) > 0:
+    old_slide = main_prs.slides[slide_idx]
+    new_slide = new_prs.slides[0]
+
+    # Clear old slide shapes
+    for shape in list(old_slide.shapes):
+        sp = shape._element
+        sp.getparent().remove(sp)
+
+    # Copy new shapes
+    for shape in new_slide.shapes:
+        el = copy.deepcopy(shape._element)
+        old_slide.shapes._spTree.append(el)
+
+    # Copy background
+    src_bg = new_slide.background._element
+    if src_bg is not None:
+        new_bg = copy.deepcopy(src_bg)
+        slide_elem = old_slide._element
+        existing_bg = slide_elem.find('{http://schemas.openxmlformats.org/presentationml/2006/main}bg')
+        if existing_bg is not None:
+            slide_elem.remove(existing_bg)
+        slide_elem.insert(0, new_bg)
+
+main_prs.save('/app/outputs/${filename}')
+print("Slide ${slideNumber} replaced successfully")
+`;
+          const tmpScript = path.join('/tmp', `enhance-replace-${timestamp}.py`);
+          fs.writeFileSync(tmpScript, replaceScript);
+          require('child_process').execSync(`python3 "${tmpScript}"`, { timeout: 30000 });
+          try { fs.unlinkSync(tmpScript); } catch (e) {}
+          try { fs.unlinkSync(outputPath); } catch (e) {}
+
+          // Generate preview of the updated slide
+          try {
+            const previewDir = '/app/previews';
+            const baseName = path.basename(filename, '.pptx');
+            const previewSubdir = path.join(previewDir, baseName);
+            // Re-render all previews for the updated file
+            require('child_process').execSync(
+              `rm -rf "${previewSubdir}" && mkdir -p "${previewSubdir}"`, { timeout: 5000 }
+            );
+            require('child_process').execSync(
+              `libreoffice --headless --convert-to pdf --outdir "${previewSubdir}" "/app/outputs/${filename}"`,
+              { timeout: 30000, stdio: 'pipe' }
+            );
+            const pdfFile = path.join(previewSubdir, baseName + '.pdf');
+            if (fs.existsSync(pdfFile)) {
+              require('child_process').execSync(
+                `pdftoppm -png -r 200 "${pdfFile}" "${path.join(previewSubdir, 'slide')}"`,
+                { timeout: 30000, stdio: 'pipe' }
+              );
+              try { fs.unlinkSync(pdfFile); } catch (e) {}
+            }
+            const images = fs.readdirSync(previewSubdir).filter(f => f.endsWith('.png')).sort();
+            if (images[slideNumber - 1]) {
+              const previewUrl = `/api/preview-image/${baseName}/${images[slideNumber - 1]}`;
+              ClaudeRunner.sendSSE(res, { type: 'enhance_preview', slideNumber, previewUrl });
+            }
+          } catch (previewErr) {
+            console.log(`[enhance] Preview generation failed: ${previewErr.message}`);
+          }
+
+          ClaudeRunner.sendSSE(res, { type: 'enhance_done', slideNumber });
+        } catch (replaceErr) {
+          ClaudeRunner.sendSSE(res, { type: 'enhance_error', slideNumber, message: replaceErr.message });
+        }
+      } else {
+        ClaudeRunner.sendSSE(res, { type: 'enhance_error', slideNumber, message: 'No output file generated' });
+      }
+      activeProcesses.delete(requestId);
+      res.end();
+    },
+    onError: (msg) => {
+      ClaudeRunner.sendSSE(res, { type: 'enhance_error', slideNumber, message: msg });
+      activeProcesses.delete(requestId);
+      res.end();
+    }
+  });
+
+  activeProcesses.set(requestId, child);
+  req.on('close', () => {});
+});
+
 // --- Step 6: Revise PPTX ---
 app.post('/api/revise', (req, res) => {
   const { filename, instructions, language, styles, uploadedFiles, revisionNumber } = req.body;

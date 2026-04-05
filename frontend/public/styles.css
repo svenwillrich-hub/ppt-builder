@@ -1257,6 +1257,82 @@ body {
 .slide-viewer-comment::placeholder { color: var(--text-muted); }
 .slide-viewer-comment:focus { outline: none; border-color: var(--accent); }
 
+/* Slide viewer actions row */
+.slide-viewer-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 16px 12px;
+}
+.slide-viewer-actions .slide-viewer-comment { margin-top: 0; flex: 1; }
+
+/* Image wrapper for overlay */
+.slide-viewer-img-wrap { position: relative; }
+
+/* Enhance button */
+.btn-enhance {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0;
+}
+.btn-enhance:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.btn-enhance:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-enhance.enhancing {
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: indPulse 1.5s ease-in-out infinite;
+}
+
+/* Enhance overlay on slide image */
+.enhance-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+}
+.enhance-overlay[hidden] { display: none; }
+.enhance-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Flash animation when enhanced preview arrives */
+.enhanced-flash {
+  animation: enhanceFlash 1.5s ease;
+}
+@keyframes enhanceFlash {
+  0% { box-shadow: inset 0 0 0 3px var(--accent); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
 /* === Fullscreen Slide Modal === */
 .slide-modal-overlay {
   position: fixed;

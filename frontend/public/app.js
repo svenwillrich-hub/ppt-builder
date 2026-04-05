@@ -1117,13 +1117,22 @@
         viewer.innerHTML = data.slides.map(function (url, i) {
           var slide = state.slides[i] || {};
           return '<div class="slide-viewer-item" id="slide-view-' + (i + 1) + '">' +
-            '<img class="slide-viewer-img" src="' + url + '" alt="Slide ' + (i + 1) + '" data-index="' + i + '" loading="lazy">' +
+            '<div class="slide-viewer-img-wrap">' +
+              '<img class="slide-viewer-img" src="' + url + '" alt="Slide ' + (i + 1) + '" data-index="' + i + '" loading="lazy">' +
+              '<div class="enhance-overlay" id="enhance-overlay-' + (i + 1) + '" hidden>' +
+                '<div class="enhance-spinner"></div>' +
+                '<span>Enhancing...</span>' +
+              '</div>' +
+            '</div>' +
             '<div class="slide-viewer-bar">' +
               '<span class="slide-viewer-num">' + (i + 1) + '</span>' +
               '<span class="slide-viewer-title">' + escapeHtml(slide.actionTitle || 'Slide ' + (i + 1)) + '</span>' +
             '</div>' +
-            '<div style="padding:8px 16px 12px">' +
+            '<div class="slide-viewer-actions">' +
               '<textarea class="slide-viewer-comment" data-slide="' + (i + 1) + '" placeholder="Revision note for this slide..."></textarea>' +
+              '<button class="btn-enhance" data-slide="' + (i + 1) + '" title="Enhance this slide">' +
+                '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11 6.5 7.5 3 6l3.5-1.5L8 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 10l.75 1.75L14.5 12.5l-1.75.75L12 15l-.75-1.75L9.5 12.5l1.75-.75L12 10z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>' +
+              '</button>' +
             '</div>' +
           '</div>';
         }).join('');
@@ -1140,11 +1149,99 @@
             updateRevisionHint();
           });
         });
+
+        viewer.querySelectorAll('.btn-enhance').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            enhanceSlide(parseInt(btn.dataset.slide));
+          });
+        });
       } else {
         viewer.innerHTML = '<div class="slide-viewer-loading">Preview not available</div>';
       }
     } catch (e) {
       viewer.innerHTML = '<div class="slide-viewer-loading">Preview rendering failed</div>';
+    }
+  }
+
+  // === ENHANCE SLIDE ===
+  async function enhanceSlide(slideNumber) {
+    var btn = document.querySelector('.btn-enhance[data-slide="' + slideNumber + '"]');
+    var overlay = $('#enhance-overlay-' + slideNumber);
+
+    if (btn) { btn.disabled = true; btn.classList.add('enhancing'); }
+    if (overlay) overlay.hidden = false;
+
+    toast('Enhancing slide ' + slideNumber + '...', 'info');
+
+    try {
+      var selectedStyle = STYLES.find(function (s) { return s.id === state.palette; }) || STYLES[0];
+      var response = await fetch(API + '/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: state.generatedFilename,
+          slideNumber: slideNumber,
+          language: state.language,
+          styles: getEnabledStyles(),
+          palette: { name: selectedStyle.name, colors: selectedStyle.colors },
+          font: state.font
+        })
+      });
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (var k = 0; k < lines.length; k++) {
+          var line = lines[k].trim();
+          if (line.startsWith('data: ')) {
+            try {
+              var event = JSON.parse(line.slice(6));
+              handleEnhanceEvent(event, slideNumber);
+            } catch (e) { /* ignore */ }
+          }
+        }
+      }
+      if (buffer.trim().startsWith('data: ')) {
+        try { handleEnhanceEvent(JSON.parse(buffer.trim().slice(6)), slideNumber); } catch (e) { /* ignore */ }
+      }
+    } catch (err) {
+      toast('Enhance failed: ' + err.message, 'error');
+    }
+
+    if (btn) { btn.disabled = false; btn.classList.remove('enhancing'); }
+    if (overlay) overlay.hidden = true;
+  }
+
+  function handleEnhanceEvent(event, slideNumber) {
+    switch (event.type) {
+      case 'enhance_started':
+        break;
+      case 'enhance_preview':
+        // Update the slide image with the new preview
+        var img = document.querySelector('#slide-view-' + slideNumber + ' .slide-viewer-img');
+        if (img) {
+          img.src = event.previewUrl + '?t=' + Date.now();
+          img.classList.add('enhanced-flash');
+          setTimeout(function () { img.classList.remove('enhanced-flash'); }, 1500);
+        }
+        break;
+      case 'enhance_done':
+        toast('Slide ' + slideNumber + ' enhanced!', 'success');
+        break;
+      case 'enhance_error':
+        toast('Enhance slide ' + slideNumber + ' failed: ' + (event.message || ''), 'error');
+        break;
+      case 'log':
+        // Silent — enhance logs go to console only
+        console.log('[enhance ' + slideNumber + ']', event.message);
+        break;
     }
   }
 

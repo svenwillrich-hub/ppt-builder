@@ -415,6 +415,68 @@ After saving the revised PPTX, ALWAYS run this validation step to prevent PowerP
 python3 -c "from pptx import Presentation; p = Presentation('/app/outputs/${revFilename}'); p.save('/app/outputs/${revFilename}')"
 \`\`\``;
   }
+  static buildEnhancePrompt({ filename, slideNumber, language, styles, palette, font, outputPath }) {
+    const styleInstructions = this.getStyleInstructions(styles || []);
+    const skillContents = this.getSkillContents();
+    const paletteBlock = this.buildPaletteBlock(palette, font);
+
+    return `You are a presentation design perfectionist. You have been given an existing single-slide PPTX.
+
+## CRITICAL: Environment Info
+- Node.js 20 with pptxgenjs PRE-INSTALLED at /app/node_modules/pptxgenjs
+- Python 3.11 with python-pptx and Pillow PRE-INSTALLED
+- Do NOT install anything — all dependencies are ready
+- Write scripts to /tmp/ and execute from there
+
+Language: ${language || 'english'}
+Existing file: /app/outputs/${filename}
+Slide to enhance: Slide ${slideNumber}
+
+## Color & Typography Customization
+${paletteBlock}
+
+## Style Guidelines
+${styleInstructions}
+
+## Skill References
+${skillContents}
+
+## Task
+Your task: Recreate slide ${slideNumber} with significantly improved visual quality while keeping the EXACT same content and message.
+
+First, read the existing PPTX to understand the current slide content. Then recreate it focusing on:
+- Better spatial balance — distribute elements evenly, avoid crowding
+- Stronger visual hierarchy — make the most important element stand out immediately
+- More sophisticated use of the color palette — subtle gradients, accent highlights, card shadows
+- Professional whitespace — breathing room between elements
+- Richer visual components — replace plain bullet lists with structured grids, icon cards, or visual frameworks where appropriate
+- Sharper typography — consistent sizing, proper line height, clear contrast
+- Polished details — aligned edges, consistent margins, rounded corners on cards
+
+Do NOT change: the title, the core message, the data points, or the storyline position of this slide.
+Do NOT add fictional content or remove existing content.
+
+## CRITICAL: Layout Quality Checks
+After generating the slide, verify these constraints before saving:
+- **No overlapping elements** — shapes, text boxes, and images must not overlap each other
+- **Nothing outside the slide** — all elements must be fully within the slide boundaries (0,0 to 13.33",7.5"). No negative x/y, no elements extending beyond the right or bottom edge
+- **No excessive whitespace** — use at least 70% of the slide area. Large empty regions signal poor layout. Fill space with structured content, not padding
+- **Text must not overflow** — text must fit inside its container. Reduce font size or expand the container if text is truncated or clipped
+- **Consistent margins** — maintain at least 0.4" margin from slide edges, and keep spacing between elements uniform
+
+## Output
+1. Read the existing PPTX at /app/outputs/${filename}
+2. Extract slide ${slideNumber}'s content
+3. Create a new single-slide PPTX with the enhanced design
+4. Save to: ${outputPath}
+5. Print: SLIDE_COMPLETE::${slideNumber}
+
+## CRITICAL: Post-Generation Validation
+After creating the PPTX file, ALWAYS run:
+\`\`\`
+python3 -c "from pptx import Presentation; p = Presentation('${outputPath}'); p.save('${outputPath}')"
+\`\`\``;
+  }
 }
 
 module.exports = PromptBuilder;
