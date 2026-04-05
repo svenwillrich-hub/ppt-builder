@@ -6,6 +6,8 @@ const fs = require('fs');
 
 const ClaudeRunner = require('./lib/claudeRunner');
 const PromptBuilder = require('./lib/promptBuilder');
+const ParallelRunner = require('./lib/parallelRunner');
+const PptxMerger = require('./lib/pptxMerger');
 
 const app = express();
 const PORT = 3001;
@@ -335,7 +337,18 @@ app.post('/api/qa', (req, res) => {
   req.on('close', () => {});
 });
 
-// Serve preview images
+// Serve per-slide preview images (from parallel generation)
+app.get('/api/previews/:file', (req, res) => {
+  const imgPath = path.join('/app/previews', req.params.file);
+  if (!fs.existsSync(imgPath)) {
+    return res.status(404).json({ error: 'Preview not found' });
+  }
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  fs.createReadStream(imgPath).pipe(res);
+});
+
+// Serve preview images (from QA/full deck)
 app.get('/api/preview-image/:dir/:file', (req, res) => {
   const imgPath = path.join('/app/previews', req.params.dir, req.params.file);
   if (!fs.existsSync(imgPath)) {
@@ -429,8 +442,8 @@ app.post('/api/analyze', (req, res) => {
   });
 });
 
-// --- Step 4: Generate PPTX ---
-app.post('/api/generate', (req, res) => {
+// --- Step 4: Generate PPTX (Parallel — one Claude session per slide) ---
+app.post('/api/generate', async (req, res) => {
   const { slides, language, styles, uploadedFiles, defaultInstructions } = req.body;
 
   if (!slides || slides.length === 0) {
@@ -445,47 +458,75 @@ app.post('/api/generate', (req, res) => {
   res.flushHeaders();
 
   const { palette, font } = req.body;
-  const prompt = PromptBuilder.buildGeneratePrompt({
-    slides, language, styles, uploadedFiles, defaultInstructions, palette, font
-  });
-
-  // Track which files existed before generation
-  let existingFiles = new Set();
-  try { existingFiles = new Set(fs.readdirSync('/app/outputs').filter(f => f.endsWith('.pptx'))); } catch (e) {}
-
   const requestId = Date.now().toString();
-  const startTime = Date.now();
-  const child = ClaudeRunner.run(prompt, res, {
-    onComplete: async (output) => {
-      // Wait for file to appear (retry-based to handle write flush delay)
-      let newFile = await findNewPptxFile(existingFiles, startTime);
+  const timestamp = new Date().toISOString().slice(0, 10) + '-' +
+    String(new Date().getHours()).padStart(2, '0') +
+    String(new Date().getMinutes()).padStart(2, '0') +
+    String(new Date().getSeconds()).padStart(2, '0');
+  const titleSlug = (slides[0]?.actionTitle || 'presentation')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40);
 
-      // Fallback: try regex from output
-      if (!newFile) {
-        const m = output.match(/\/app\/outputs\/([\w\-\.]+\.pptx)/);
-        if (m && fs.existsSync(path.join('/app/outputs', m[1]))) newFile = m[1];
-      }
+  ClaudeRunner.sendSSE(res, { type: 'started', requestId, totalSlides: slides.length });
+  ClaudeRunner.sendSSE(res, { type: 'log', message: `[parallel] Starting ${slides.length} parallel slide generations...` });
 
-      if (newFile) {
-        ClaudeRunner.sendSSE(res, { type: 'done', filename: newFile });
-      } else {
-        ClaudeRunner.sendSSE(res, { type: 'error', message: 'No new PPTX file found after generation. Check the log.' });
-      }
-      activeProcesses.delete(requestId);
-      res.end();
-    },
-    onError: () => { activeProcesses.delete(requestId); res.end(); }
+  // Build shared storyline context
+  const storylineContext = PromptBuilder.buildStorylineContext({
+    slides, language, palette, font, styles
   });
 
-  activeProcesses.set(requestId, child);
+  // Build per-slide prompts
+  const slideJobs = slides.map(slide => {
+    const outputPath = `/app/outputs/.tmp-slide-${timestamp}-${slide.slideNumber}.pptx`;
+    const prompt = PromptBuilder.buildSingleSlidePrompt({
+      slide,
+      totalSlides: slides.length,
+      storylineContext,
+      uploadedFiles,
+      defaultInstructions,
+      outputPath
+    });
+    return { slideNumber: slide.slideNumber, prompt, outputPath };
+  });
 
-  // Send the request ID so client can cancel
-  ClaudeRunner.sendSSE(res, { type: 'started', requestId });
+  try {
+    const { completedFiles, failed, children } = await ParallelRunner.run(slideJobs, res);
+    activeProcesses.set(requestId, children);
 
-  // Do NOT kill on connection close — let Claude finish in background
-  // The process will complete and save the file regardless
+    if (completedFiles.length === 0) {
+      ClaudeRunner.sendSSE(res, { type: 'error', message: 'All slide generations failed. Check the log.' });
+      activeProcesses.delete(requestId);
+      return res.end();
+    }
+
+    if (failed.length > 0) {
+      ClaudeRunner.sendSSE(res, { type: 'log', message: `[parallel] WARNING: ${failed.length} slide(s) failed: ${failed.join(', ')}` });
+    }
+
+    // Merge slides
+    ClaudeRunner.sendSSE(res, { type: 'merging' });
+    ClaudeRunner.sendSSE(res, { type: 'log', message: `[parallel] Merging ${completedFiles.length} slides...` });
+
+    const finalFilename = `${timestamp}-${titleSlug}.pptx`;
+    const finalOutputPath = path.join('/app/outputs', finalFilename);
+
+    try {
+      PptxMerger.merge(completedFiles, finalOutputPath);
+      PptxMerger.cleanup(completedFiles);
+      ClaudeRunner.sendSSE(res, { type: 'done', filename: finalFilename });
+    } catch (mergeErr) {
+      ClaudeRunner.sendSSE(res, { type: 'error', message: `Merge failed: ${mergeErr.message}` });
+    }
+
+    activeProcesses.delete(requestId);
+    res.end();
+  } catch (err) {
+    ClaudeRunner.sendSSE(res, { type: 'error', message: `Generation failed: ${err.message}` });
+    activeProcesses.delete(requestId);
+    res.end();
+  }
+
   req.on('close', () => {
-    // Connection closed but process keeps running
+    // Connection closed but processes keep running
   });
 });
 
@@ -543,9 +584,14 @@ app.post('/api/revise', (req, res) => {
 
 // --- Cancel a running process ---
 app.post('/api/cancel/:requestId', (req, res) => {
-  const proc = activeProcesses.get(req.params.requestId);
-  if (proc) {
-    proc.kill('SIGTERM');
+  const procs = activeProcesses.get(req.params.requestId);
+  if (procs) {
+    // Handle both single process and array of processes
+    if (Array.isArray(procs)) {
+      ParallelRunner.killAll(procs);
+    } else {
+      try { procs.kill('SIGTERM'); } catch (e) { /* ignore */ }
+    }
     activeProcesses.delete(req.params.requestId);
     res.json({ cancelled: true });
   } else {

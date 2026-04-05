@@ -926,51 +926,139 @@
     stopTimer('gen');
   }
 
+  function initProgressGrid(totalSlides) {
+    var grid = $('#gen-progress-grid');
+    grid.hidden = false;
+    state._genTotalSlides = totalSlides;
+    state._slidesCompleted = 0;
+    state._slideCompletionTimes = [];
+    state._genStartTime = Date.now();
+
+    // Build indicators
+    var indHtml = '';
+    for (var i = 1; i <= totalSlides; i++) {
+      indHtml += '<div class="gen-slide-ind" id="gen-ind-' + i + '" data-slide="' + i + '">' + i + '</div>';
+    }
+    $('#gen-slide-indicators').innerHTML = indHtml;
+
+    // Build preview cards
+    var cardsHtml = '';
+    for (var j = 1; j <= totalSlides; j++) {
+      var title = (state.slides[j - 1] && state.slides[j - 1].actionTitle) || 'Slide ' + j;
+      cardsHtml += '<div class="gen-preview-card" id="gen-preview-' + j + '">' +
+        '<div class="gen-preview-card-header"><span class="slide-badge">' + j + '</span>' + escapeHtml(title) + '</div>' +
+        '<div class="gen-preview-card-body" id="gen-preview-body-' + j + '">' +
+          '<div class="preview-spinner"></div>' +
+        '</div></div>';
+    }
+    $('#gen-slide-previews').innerHTML = cardsHtml;
+
+    updateProgressStats();
+  }
+
+  function updateProgressStats() {
+    var total = state._genTotalSlides || state.slides.length;
+    var done = state._slidesCompleted || 0;
+    var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    $('#gen-progress-bar').style.width = pct + '%';
+
+    var eta = '';
+    if (done > 0 && done < total) {
+      var times = state._slideCompletionTimes || [];
+      var avgMs = times.reduce(function (a, b) { return a + b; }, 0) / times.length;
+      var remainingMs = avgMs * (total - done);
+      var remainMin = Math.floor(remainingMs / 60000);
+      var remainSec = Math.floor((remainingMs % 60000) / 1000);
+      eta = '~' + (remainMin > 0 ? remainMin + 'm ' : '') + remainSec + 's remaining';
+    } else if (done === total && total > 0) {
+      eta = 'Merging...';
+    }
+
+    $('#gen-progress-stats').innerHTML =
+      '<span>' + done + ' / ' + total + ' slides complete</span>' +
+      '<span>' + eta + '</span>';
+  }
+
   function handleGenerateEvent(event, logEl) {
     switch (event.type) {
       case 'started':
         state.activeRequestId = event.requestId;
-        $('#gen-status-detail').textContent = 'Claude is working...';
+        initProgressGrid(event.totalSlides || state.slides.length);
+        $('#gen-status-detail').textContent = 'Starting ' + (event.totalSlides || state.slides.length) + ' parallel sessions...';
         break;
+
+      case 'slide_started':
+        var indStart = $('#gen-ind-' + event.slideNumber);
+        if (indStart) indStart.className = 'gen-slide-ind generating';
+        $('#gen-status-detail').textContent = 'Generating slides in parallel...';
+        break;
+
+      case 'slide_complete':
+        state._slidesCompleted = (state._slidesCompleted || 0) + 1;
+        state._slideCompletionTimes = state._slideCompletionTimes || [];
+        state._slideCompletionTimes.push(Date.now() - (state._genStartTime || Date.now()));
+
+        var indDone = $('#gen-ind-' + event.slideNumber);
+        if (indDone) { indDone.className = 'gen-slide-ind done'; indDone.innerHTML = '\u2713'; }
+
+        updateProgressStats();
+        $('#gen-status-detail').textContent = state._slidesCompleted + ' of ' + (state._genTotalSlides || state.slides.length) + ' slides complete';
+        break;
+
+      case 'slide_preview':
+        var previewBody = $('#gen-preview-body-' + event.slideNumber);
+        if (previewBody) {
+          var img = document.createElement('img');
+          img.src = API.replace('/api', '') + event.previewUrl;
+          img.alt = 'Slide ' + event.slideNumber;
+          img.onload = function () { img.classList.add('visible'); };
+          // Remove spinner
+          var spinner = previewBody.querySelector('.preview-spinner');
+          if (spinner) spinner.remove();
+          var placeholder = previewBody.querySelector('.preview-placeholder');
+          if (placeholder) placeholder.remove();
+          previewBody.appendChild(img);
+          $('#gen-preview-' + event.slideNumber).classList.add('loaded');
+        }
+        break;
+
+      case 'merging':
+        $('#gen-status-detail').textContent = 'Merging slides into final presentation...';
+        updateProgressStats();
+        break;
+
       case 'log':
         logEl.textContent += event.message + '\n';
         logEl.scrollTop = logEl.scrollHeight;
         state.genLastLogTime = Date.now();
-        // Update status detail based on log content
-        if (event.message.includes('>>> Write')) {
-          $('#gen-status-detail').textContent = 'Writing generation script...';
-        } else if (event.message.includes('>>> Bash')) {
-          $('#gen-status-detail').textContent = 'Executing script...';
-        } else if (event.message.includes('SLIDE_COMPLETE')) {
-          var m = event.message.match(/SLIDE_COMPLETE::(\d+)/);
-          if (m) $('#gen-status-detail').textContent = 'Slide ' + m[1] + ' of ' + state.slides.length + ' complete';
-        } else if (event.message.includes('>>> Edit')) {
-          $('#gen-status-detail').textContent = 'Fixing script...';
-        } else if (event.message.includes('Presentation saved')) {
-          $('#gen-status-detail').textContent = 'Saving presentation...';
-        }
         break;
+
       case 'done':
         stopTimer('gen');
         state.timings.generate = state.genSeconds || 0;
         state.timings.total = state.timings.analyze + state.timings.outline + state.timings.generate;
         state.generatedFilename = event.filename;
         state.activeRequestId = null;
-        // Update status banner to done state
         $('#gen-status-banner').className = 'gen-status-banner done';
         $('#gen-status-text').textContent = 'Generation complete';
         $('#gen-status-detail').textContent = state.slides.length + ' slides in ' + formatDuration(state.timings.generate);
         $('#gen-status-icon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--success)" stroke-width="2"/><path d="M7 12l3 3 7-7" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        // Show done banner, hide cancel
+        $('#gen-progress-bar').style.width = '100%';
         $('#gen-actions-running').hidden = true;
         $('#gen-actions-done').hidden = false;
         $('#gen-done-meta').textContent = state.slides.length + ' slides | ' + formatDuration(state.timings.generate) + ' | ' + (event.filename || '');
         loadOutputFiles();
         toast('Presentation generated!', 'success');
         break;
+
       case 'error':
         stopTimer('gen');
         state.activeRequestId = null;
+        if (event.slideNumber) {
+          var indErr = $('#gen-ind-' + event.slideNumber);
+          if (indErr) { indErr.className = 'gen-slide-ind error'; indErr.innerHTML = '\u2717'; }
+        }
         $('#gen-status-banner').className = 'gen-status-banner';
         $('#gen-status-banner').style.borderColor = 'var(--error)';
         $('#gen-status-banner').style.background = 'var(--error-light)';

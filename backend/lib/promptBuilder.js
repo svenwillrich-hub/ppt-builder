@@ -146,41 +146,7 @@ For each research slide:
 Language: ${language || 'english'}
 
 ## Color & Typography Customization
-${palette ? (() => {
-  const c = palette.colors.map(hex => hex.replace('#', ''));
-  return `CUSTOM Color Palette: ${palette.name}
-
-CRITICAL: Use EXACTLY these hex values wherever the skills reference palette.* variables:
-
-\`\`\`javascript
-const palette = {
-  // Accent colors — from selected palette
-  primary:      "${c[0]}",  // Main accent: headers, bars, highlights
-  primaryLight: "${c[4] || c[0]}",  // Secondary accent
-  primaryPale:  "${c[2] || c[0]}",  // Subtle accent backgrounds
-  accent:       "${c[1]}",  // Charts, secondary visual encoding
-  accentLight:  "${c[3] || c[2] || c[0]}",  // Light accent variant
-  alertRed:     "${c[3] || 'CC0000'}",  // Emphasis, warnings
-  darkGreen:    "${c[5] || '2D6A2E'}",  // Category encoding
-
-  // Neutral colors — fixed
-  lightBg:      "FFFFFF",
-  lightGray:    "F2F2F2",
-  textDark:     "000000",
-  textBody:     "3F3F3F",
-  textMuted:    "5B5D60",
-  textSubtle:   "57677A",
-  textLight:    "FFFFFF",
-  cardBg:       "FFFFFF",
-  border:       "D8D8D8",
-  midGrey:      "7F7F7F",
-};
-\`\`\`
-
-For SVG skills, prepend "#" to each value (e.g. "#${c[0]}" instead of "${c[0]}").
-All 6 palette colors: ${palette.colors.join(', ')}`;
-})() : 'No palette selected. Use a professional consulting color scheme with blue as primary accent.'}
-${font ? `\nCUSTOM Font: ${font}\nUse "${font}" for ALL text in the presentation (titles, body, labels). This overrides any skill-defined fonts.` : ''}
+${this.buildPaletteBlock(palette, font)}
 
 ## Style Guidelines
 ${styleInstructions}
@@ -209,6 +175,125 @@ After creating the PPTX file, ALWAYS run this validation step to prevent PowerPo
 python3 -c "from pptx import Presentation; p = Presentation('/app/outputs/${filename}'); p.save('/app/outputs/${filename}')"
 \`\`\`
 This re-saves the file through python-pptx's XML parser which fixes common formatting issues.`;
+  }
+
+  static buildPaletteBlock(palette, font) {
+    if (!palette) return 'No palette selected. Use a professional consulting color scheme with blue as primary accent.';
+    const c = palette.colors.map(hex => hex.replace('#', ''));
+    let block = `CUSTOM Color Palette: ${palette.name}
+
+CRITICAL: Use EXACTLY these hex values wherever the skills reference palette.* variables:
+
+\`\`\`javascript
+const palette = {
+  primary:      "${c[0]}",
+  primaryLight: "${c[4] || c[0]}",
+  primaryPale:  "${c[2] || c[0]}",
+  accent:       "${c[1]}",
+  accentLight:  "${c[3] || c[2] || c[0]}",
+  alertRed:     "${c[3] || 'CC0000'}",
+  darkGreen:    "${c[5] || '2D6A2E'}",
+  lightBg:      "FFFFFF",
+  lightGray:    "F2F2F2",
+  textDark:     "000000",
+  textBody:     "3F3F3F",
+  textMuted:    "5B5D60",
+  textSubtle:   "57677A",
+  textLight:    "FFFFFF",
+  cardBg:       "FFFFFF",
+  border:       "D8D8D8",
+  midGrey:      "7F7F7F",
+};
+\`\`\`
+
+For SVG skills, prepend "#" to each value (e.g. "#${c[0]}" instead of "${c[0]}").
+All 6 palette colors: ${palette.colors.join(', ')}`;
+    if (font) block += `\n\nCUSTOM Font: ${font}\nUse "${font}" for ALL text in the presentation (titles, body, labels). This overrides any skill-defined fonts.`;
+    return block;
+  }
+
+  static buildStorylineContext({ slides, language, palette, font, styles }) {
+    const styleInstructions = this.getStyleInstructions(styles || []);
+    const paletteBlock = this.buildPaletteBlock(palette, font);
+    const slideOutline = slides.map(s =>
+      `- Slide ${s.slideNumber}/${slides.length}: "${s.actionTitle}" — ${s.coreMessage || s.description || ''}`
+    ).join('\n');
+
+    return `## Presentation Storyline Context
+
+You are generating ONE slide of a ${slides.length}-slide presentation. The other slides are being generated in parallel by separate Claude sessions. You must focus ONLY on your assigned slide, but use this context to ensure visual and narrative consistency.
+
+Language: ${language || 'english'}
+
+## Full Slide Outline (for storyline awareness)
+${slideOutline}
+
+## Color & Typography Customization
+${paletteBlock}
+
+## Style Guidelines
+${styleInstructions}
+
+## CRITICAL: Environment Info
+- You are running inside a Docker container as user "appuser"
+- Node.js 20 is available. pptxgenjs is PRE-INSTALLED at /app/node_modules/pptxgenjs — do NOT install it again
+- Python 3.11 is available. python-pptx and Pillow are PRE-INSTALLED — do NOT install them again
+- Working directory is /app
+- Do NOT use pip install or npm install — everything is already set up
+- Write the generation script to /tmp/ and execute it from there`;
+  }
+
+  static buildSingleSlidePrompt({ slide, totalSlides, storylineContext, uploadedFiles, defaultInstructions, outputPath }) {
+    const skillContents = this.getSkillContents();
+    const fileContents = this.getUploadedFileContents(uploadedFiles);
+
+    let researchSection = '';
+    if (slide.researchNeeded) {
+      researchSection = `## Research Requirements
+This slide requires real-world research with cited sources.
+1. Use web search to find relevant academic papers, industry reports, or authoritative sources
+2. Prefer: peer-reviewed papers, conference proceedings, Gartner/McKinsey/BCG reports, official statistics
+3. Add a FOOTNOTES section at the bottom of the slide with APA-style citations
+4. Reference each claim with a superscript number matching the footnote
+5. Use small font (8-9pt) for footnotes`;
+    }
+
+    return `You are a professional presentation designer. Create a single PPTX slide.
+
+${storylineContext}
+
+${defaultInstructions ? `## Additional Instructions\n${defaultInstructions}\n` : ''}
+
+## Skill References
+${skillContents}
+
+## YOUR ASSIGNED SLIDE (Slide ${slide.slideNumber} of ${totalSlides})
+
+\`\`\`json
+${JSON.stringify(slide, null, 2)}
+\`\`\`
+
+**Title:** ${slide.actionTitle}
+**Core Message:** ${slide.coreMessage || ''}
+**Description:** ${slide.description || ''}
+**Slide Type:** ${slide.slideType || 'standard'}
+
+${researchSection}
+
+## Reference Documents
+${fileContents}
+
+## Output Instructions
+- Create a PPTX file with EXACTLY ONE slide
+- Use widescreen dimensions: 13.33" × 7.5"
+- Save the file to: ${outputPath}
+- After completing the slide, print exactly: SLIDE_COMPLETE::${slide.slideNumber}
+
+## CRITICAL: Post-Generation Validation
+After creating the PPTX file, ALWAYS run:
+\`\`\`
+python3 -c "from pptx import Presentation; p = Presentation('${outputPath}'); p.save('${outputPath}')"
+\`\`\``;
   }
 
   static buildQAPrompt({ filename, slides, styles, previewPaths }) {
