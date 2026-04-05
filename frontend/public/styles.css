@@ -909,6 +909,9 @@ body {
   border-radius: var(--radius-lg);
   margin-top: 16px;
 }
+.gen-done-banner[hidden] {
+  display: none;
+}
 .gen-done-check { flex-shrink: 0; }
 .gen-done-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .gen-done-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }

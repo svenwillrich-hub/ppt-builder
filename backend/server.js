@@ -127,7 +127,7 @@ app.get('/api/skills', (req, res) => {
   try {
     const skillsDir = '/app/skills';
     const files = fs.readdirSync(skillsDir)
-      .filter(f => f.endsWith('.skill'));
+      .filter(f => (f.endsWith('.skill') || f.endsWith('.md') || f.endsWith('.txt')) && f !== 'README.md');
     const skills = files.map(f => {
       const content = fs.readFileSync(path.join(skillsDir, f), 'utf-8');
       const nameMatch = content.match(/^#\s+(.+)/m);

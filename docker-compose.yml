@@ -20,3 +20,4 @@ services:
       - ./config:/app/config
       - ${CLAUDE_HOME:-${HOME:-${USERPROFILE}}}/.claude:/home/appuser/.claude
       - ${CLAUDE_HOME:-${HOME:-${USERPROFILE}}}/.claude.json:/home/appuser/.claude.json
+      - ./.credentials.json:/home/appuser/.claude/.credentials.json
