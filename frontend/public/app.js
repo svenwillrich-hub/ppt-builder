@@ -889,15 +889,9 @@
 
   function renderAnalysisFacts() {
     var facts = $('#analysis-facts');
-    var visualTypes = new Set(
-      state.slides.map(function (s) {
-        return ((s.visualSuggestion || '').split(/[,;]/)[0] || '').trim().toLowerCase();
-      }).filter(Boolean)
-    );
     var researchCount = state.slides.filter(function (s) { return s.researchNeeded; }).length;
     facts.innerHTML =
       '<div class="fact-chip"><span class="fact-label">Slides</span><span class="fact-value">' + state.slides.length + '</span></div>' +
-      '<div class="fact-chip"><span class="fact-label">Visual Types</span><span class="fact-value">' + visualTypes.size + '</span></div>' +
       (researchCount > 0 ? '<div class="fact-chip"><span class="fact-label">Research</span><span class="fact-value">' + researchCount + '</span></div>' : '');
   }
 
@@ -924,9 +918,13 @@
         '<span class="drag-handle" title="Drag to reorder"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="4" r="1" fill="currentColor"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/></svg></span>' +
       '</div>' +
       '<div class="slide-field"><label>Action Title</label><input type="text" class="action-title" value="' + escapeHtml(slide.actionTitle || '') + '" data-field="actionTitle"></div>' +
-      '<div class="slide-fields-row">' +
-        '<div class="slide-field"><label>Description</label><textarea data-field="description" rows="3">' + escapeHtml(slide.description || '') + '</textarea></div>' +
-        '<div class="slide-field"><label>Visual Concept</label><textarea data-field="visualSuggestion" rows="3">' + escapeHtml(slide.visualSuggestion || '') + '</textarea></div>' +
+      '<div class="slide-field"><label>Description</label><textarea data-field="description" rows="3">' + escapeHtml(slide.description || '') + '</textarea></div>' +
+      '<div class="slide-field"><label>Slide Type</label>' +
+        '<div class="slide-type-radios">' +
+          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="standard" ' + ((!slide.slideType || slide.slideType === 'standard') ? 'checked' : '') + ' data-field="slideType"><span>Standard (Recommended)</span></label>' +
+          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="visual-components" ' + (slide.slideType === 'visual-components' ? 'checked' : '') + ' data-field="slideType"><span>Slide with visual components</span></label>' +
+          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="complex-visual" ' + (slide.slideType === 'complex-visual' ? 'checked' : '') + ' data-field="slideType"><span>Complex visual component (layered architecture, flow architecture)</span></label>' +
+        '</div>' +
       '</div>' +
       '<div class="slide-card-footer">' +
         '<label class="research-toggle"><input type="checkbox" data-field="researchNeeded" ' + (slide.researchNeeded ? 'checked' : '') + '> Research</label>' +
@@ -957,6 +955,12 @@
       state.slides[index].researchNeeded = e.target.checked;
     });
 
+    card.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        state.slides[index].slideType = radio.value;
+      });
+    });
+
     card.querySelector('.duplicate').addEventListener('click', function () {
       var copy = {};
       Object.keys(state.slides[index]).forEach(function (k) { copy[k] = state.slides[index][k]; });
@@ -981,7 +985,7 @@
       slideNumber: state.slides.length + 1,
       actionTitle: '',
       description: '',
-      visualSuggestion: '',
+      slideType: 'standard',
       researchNeeded: false
     });
     renderSlideOutline();

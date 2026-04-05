@@ -724,11 +724,24 @@ body {
 .drag-handle { cursor: grab; color: var(--text-muted); margin-left: auto; padding: 4px; }
 .drag-handle:active { cursor: grabbing; }
 
-/* Slide fields (grid 2 columns for description + visual concept) */
-.slide-fields-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* Slide type radio buttons */
+.slide-type-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slide-type-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.slide-type-option input[type="radio"] {
+  accent-color: var(--primary);
+  margin: 0;
+  width: auto;
 }
 
 .slide-field { margin-bottom: 12px; }

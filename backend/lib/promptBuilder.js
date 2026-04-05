@@ -86,7 +86,7 @@ Return ONLY a valid JSON array with this structure for each slide:
     "slideNumber": 1,
     "actionTitle": "Key message of this slide",
     "description": "Detailed content description",
-    "visualSuggestion": "How to visually present this (e.g. '2x2 matrix', 'process flow diagram', 'data table with highlights')",
+    "slideType": "standard",
     "researchNeeded": false
   }
 ]
