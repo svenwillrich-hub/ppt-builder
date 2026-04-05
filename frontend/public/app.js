@@ -101,14 +101,7 @@
     }
   ];
 
-  const DEFAULT_INSTRUCTIONS = `Create top-notch consulting slides following these principles:
-- Every slide must have a clear action title (key takeaway as the headline)
-- Use the Pyramid Principle: lead with the conclusion, support with evidence
-- Include quantitative data points wherever possible
-- Suggest high-impact visuals: 2x2 matrices, process flows, waterfall charts
-- Keep text concise: max 5 bullet points per slide, each under 15 words
-- Include a clear narrative arc: Situation > Complication > Resolution
-- Add source citations for all data claims`;
+  const DEFAULT_INSTRUCTIONS = `Use the provided Capco Slides skill as the authoritative style guide. Follow its layout patterns, header structure, typography, and color system precisely. Leverage the visual components and SVG diagram skills for rich, data-driven visualizations — never use standalone visuals without surrounding context. Prioritize information density, structured grids, and clear action titles on every slide.`;
 
   const FONTS = [
     { name: 'Calibri', desc: 'Modern sans-serif, Office default' },

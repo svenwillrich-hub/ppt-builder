@@ -1,6 +1,6 @@
 ---
 name: capco-slides
-description: "Create professional presentations in the Capco consulting style — teal accents, Century Gothic typography, high-density content grids, and a structured section-based narrative. No section dividers — rhythm comes from consistent headers with numbered prefixes and teal underlines on every content slide. Visual components are always embedded in richer layouts with context strips. Use this skill when the user asks for 'Capco deck', 'Capco style presentation', 'Capco slides', 'capability deck', 'data practice presentation', or any consulting presentation with a teal corporate aesthetic. Creates widescreen (13.33\" × 7.5\") decks with structured content grids and professional information density."
+description: "Create professional presentations in the Capco consulting style — accent colors from the selected palette, Century Gothic typography, high-density content grids, and a structured section-based narrative. No section dividers — rhythm comes from consistent headers with numbered prefixes and accent underlines on every content slide. Visual components are always embedded in richer layouts with context strips. Colors are defined externally via the palette setting — do not hardcode color values. Creates widescreen (13.33\" × 7.5\") decks with structured content grids and professional information density."
 ---
 
 # Capco-Style PPTX Skill
@@ -10,9 +10,9 @@ description: "Create professional presentations in the Capco consulting style �
 **Corporate density meets clean structure.** Every slide communicates through structured grids, card layouts, and categorized information — not bullet walls. The Capco style balances high information density with visual clarity through consistent headers, embedded visual components, and key-message anchors on every slide.
 
 **Core principles:**
-- **Consistent header on EVERY content slide:** Numbered section prefix + pipe separator + teal underline + description line — this is the #1 structural rule
+- **Consistent header on EVERY content slide:** Numbered section prefix + pipe separator + accent underline + description line — this is the #1 structural rule
 - Content slides use white/light backgrounds with structured multi-column grids
-- Teal (`00868C`) is the signature accent — used for bars, highlights, labels, and category headers
+- The primary accent color (from the selected palette) is used for bars, highlights, labels, and category headers
 - Century Gothic is the dominant typeface throughout — clean, geometric, modern
 - High density: 6-12 data points per content slide, organized in card grids
 - Numbered section prefixes (01., 02., 03.) create navigational hierarchy
@@ -34,28 +34,30 @@ description: "Create professional presentations in the Capco consulting style �
 **IMPORTANT:** Always read `/mnt/skills/public/pptx/pptxgenjs.md` before writing any code. It contains the full PptxGenJS API reference, icon rendering setup, and critical pitfalls to avoid.
 
 **THREE GOLDEN RULES (always apply):**
-1. **Header on EVERY content slide** — `addSlideHeader()` with numbered prefix + pipe separator + teal line + description
+1. **Header on EVERY content slide** — `addSlideHeader()` with numbered prefix + pipe separator + accent line + description
 2. **Visual components embedded, not standalone** — Always surround with context cards, info grids, or source cards (Pattern 12)
 
 ---
 
 ## Color Palette
 
+**IMPORTANT: Colors are provided externally via the Color Palette setting.** Do not hardcode any specific color values. Instead, use the palette colors passed in the `## Color & Typography Customization` section of the prompt.
+
+Map the externally provided palette colors to these semantic roles:
+
 ```javascript
 const palette = {
   lightBg:     "FFFFFF",  // White for content slide backgrounds
   lightGray:   "F2F2F2",  // Light gray for subtle card backgrounds
-  primary:     "00868C",  // Capco teal — THE signature color
-  primaryLight:"00B3BB",  // Lighter teal for hover/secondary accents
-  primaryPale: "B2CFD0",  // Very light teal for subtle backgrounds
-  accent:      "00BFCB",  // Bright teal for highlights and section labels
+  primary:     "<Color 1 from palette>",  // Main accent — section headers, bars, highlights, category labels
+  primaryLight:"<Color 1, lightened>",    // Secondary accent — lighter fills, hover states
+  primaryPale: "<Color 1, very light>",   // Subtle accent backgrounds
+  accent:      "<Color 2 from palette>",  // Highlights, section labels
   textDark:    "000000",  // Primary text on light backgrounds
   textBody:    "3F3F3F",  // Body text on light backgrounds
   textMuted:   "5B5D60",  // Secondary/caption text
   textSubtle:  "57677A",  // Muted descriptive text
-  textLight:   "FFFFFF",  // Text inside teal shapes and accent areas
-  alertRed:    "C00D0D",  // Alert/emphasis red
-  darkGreen:   "033C11",  // Dark green for category encoding
+  textLight:   "FFFFFF",  // Text inside accent shapes
   cardBg:      "FFFFFF",  // Card background
   border:      "D8D8D8",  // Subtle borders
 };
@@ -64,29 +66,29 @@ const palette = {
 ### Color Usage Rules
 
 ```
-primary (00868C)     → Section header bars, accent bars on cards, category labels,
-                       teal rectangles behind section titles, key highlights
-primaryLight (00B3BB)→ Secondary teal elements, lighter accent fills
-primaryPale (B2CFD0) → Pale teal backgrounds for subtle card sections
-lightBg (FFFFFF)      → Content slide backgrounds
-textDark (000000)     → Slide titles, bold headers on light backgrounds
-textBody (3F3F3F)     → Body text, descriptions
-textMuted (5B5D60)    → Captions, secondary info
-textLight (FFFFFF)    → Text inside teal shapes and accent areas
-alertRed (C00D0D)     → Emphasis, warnings, important callouts
-darkGreen (033C11)    → Category encoding, secondary category color
+primary (Color 1)     → Section header bars, accent bars on cards, category labels,
+                        accent rectangles behind section titles, key highlights
+primaryLight           → Secondary accent elements, lighter fills (derive from Color 1)
+primaryPale            → Pale accent backgrounds for subtle card sections (derive from Color 1)
+accent (Color 2)       → Highlights, section labels, secondary visual encoding
+lightBg (FFFFFF)       → Content slide backgrounds
+textDark (000000)      → Slide titles, bold headers on light backgrounds
+textBody (3F3F3F)      → Body text, descriptions
+textMuted (5B5D60)     → Captions, secondary info
+textLight (FFFFFF)     → Text inside accent shapes
 ```
 
 ### Category Color Encoding
 
-When a framework has distinct categories (e.g., service lines):
+When a framework has distinct categories, derive category fills from the provided palette colors:
 
 ```javascript
+// Map palette colors to categories in order
 const categories = {
-  digital:     { fill: "00868C", text: "FFFFFF" },  // Teal
-  consulting:  { fill: "033C11", text: "FFFFFF" },  // Dark green
-  technology:  { fill: "C00D0D", text: "FFFFFF" },  // Red
-  neutral:     { fill: "3F3F3F", text: "FFFFFF" },  // Dark gray
+  category1: { fill: "<Color 1>", text: palette.textLight },
+  category2: { fill: "<Color 2>", text: palette.textLight },
+  category3: { fill: "<Color 3>", text: palette.textLight },
+  neutral:   { fill: palette.textBody,    text: palette.textLight },
 };
 ```
 
@@ -107,15 +109,15 @@ const categories = {
 
 | Element | Size | Weight | Color |
 |---------|------|--------|-------|
-| Slide title (numbered) | 26pt | Bold | `000000` |
-| Slide title pipe suffix | 26pt | Regular | `000000` |
-| Subtitle / description | 16pt | Regular | `3F3F3F` |
-| Card/column header | 12-14pt | Bold | `000000` or `FFFFFF` |
-| Body text | 11pt | Regular | `3F3F3F` |
-| Caption / source | 10pt | Regular | `5B5D60` |
-| Big number callout | 51pt | Bold | `00868C` |
-| KPI label | 12pt | Regular | `5B5D60` |
-| Section number prefix | 26pt | Bold | `000000` |
+| Slide title (numbered) | 26pt | Bold | textDark |
+| Slide title pipe suffix | 26pt | Regular | textDark |
+| Subtitle / description | 16pt | Regular | textBody |
+| Card/column header | 12-14pt | Bold | textDark or textLight |
+| Body text | 11pt | Regular | textBody |
+| Caption / source | 10pt | Regular | textMuted |
+| Big number callout | 51pt | Bold | primary |
+| KPI label | 12pt | Regular | textMuted |
+| Section number prefix | 26pt | Bold | textDark |
 
 ### Text Rules
 - **Left-align** all body text
@@ -159,30 +161,30 @@ const categories = {
 - Background: White/light with subtle wave pattern image (grayscale, 70% alpha)
 - Title: Century Gothic (`+mj-lt`), **36pt**, bold, left-aligned, bottom-anchored at y ≈ 4.32" (EMU: 4320000)
 - Subtitle: Century Gothic, **20pt**, regular, at y ≈ 5.11" (EMU: 5112000)
-- Location/Date: Century Gothic, **14pt**, accent2 color (`5B5D60`), at y ≈ 6.06"
+- Location/Date: Century Gothic, **14pt**, `palette.textMuted`, at y ≈ 6.06"
 - Author: Century Gothic, **14pt**, accent2 color, at x ≈ 4.1", y ≈ 6.06"
 - Client Logo area: right-aligned, at x ≈ 8.4", y ≈ 5.25"
 - Copyright: Calibri, **8pt**, at bottom-left y ≈ 6.48"
 - Wipro logo: centered at bottom, at x ≈ 5.5", y ≈ 6.44"
-- No dark background, no teal subtitle bar — clean, corporate white aesthetic
+- No dark background, no accent subtitle bar — clean, corporate white aesthetic
 
 **Implementation:**
 ```javascript
 function createTitleSlide(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title text (bold, black, lower-left)
   slide.addText(opts.title || "Presentation Title", {
     x: 0.58, y: 4.32, w: 7.87, h: 0.78,
-    fontSize: 36, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 36, fontFace: "Century Gothic", color: palette.textBody,
     bold: true, valign: "bottom", margin: 0,
   });
 
   // Subtitle text (regular, below title)
   slide.addText(opts.subtitle || "", {
     x: 0.58, y: 5.11, w: 7.87, h: 0.29,
-    fontSize: 20, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 20, fontFace: "Century Gothic", color: palette.textBody,
     valign: "top", margin: 0,
   });
 
@@ -190,7 +192,7 @@ function createTitleSlide(pres, opts) {
   if (opts.location || opts.date) {
     slide.addText(opts.location || opts.date || "", {
       x: 0.58, y: 6.06, w: 2.5, h: 0.2,
-      fontSize: 14, fontFace: "Century Gothic", color: "5B5D60",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textMuted,
       valign: "top", margin: 0,
     });
   }
@@ -199,7 +201,7 @@ function createTitleSlide(pres, opts) {
   if (opts.author) {
     slide.addText(opts.author, {
       x: 4.27, y: 6.06, w: 2.5, h: 0.2,
-      fontSize: 14, fontFace: "Century Gothic", color: "5B5D60",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textMuted,
       valign: "top", margin: 0,
     });
   }
@@ -207,7 +209,7 @@ function createTitleSlide(pres, opts) {
   // Copyright text (bottom-left)
   slide.addText("© 2026 The Capital Markets Company Sàrl. Capco Confidential. All rights reserved.", {
     x: 0.58, y: 6.48, w: 4, h: 0.15,
-    fontSize: 8, fontFace: "Calibri", color: "AFB1B5",
+    fontSize: 8, fontFace: "Calibri", color: palette.border,
     valign: "top", margin: 0,
   });
 
@@ -246,7 +248,7 @@ function createTitleSlide(pres, opts) {
 **Key design details (from 2026 Capco template):**
 - Left image: Full-bleed, spans x=0 to x ≈ 4.11" (EMU: 3947888), y=0 to y ≈ 6.52" (EMU: 6257925)
 - Title "Agenda": Century Gothic, **28pt**, bold, letter-spacing 50 (≈ 0.5pt), at x ≈ 5.06" (EMU: 4860000), y ≈ 0.37" (EMU: 360000)
-- Dark blue accent line: color `24408F`, **2.5pt** thick (EMU: 31750), square cap, at x ≈ 5.06", y ≈ 0.84" (EMU: 810000), width ≈ 1.63" (EMU: 1566545)
+- Accent line: color `palette.primary`, **2.5pt** thick (EMU: 31750), square cap, at x ≈ 5.06", y ≈ 0.84" (EMU: 810000), width ≈ 1.63" (EMU: 1566545)
 - Content area starts at x ≈ 5.06", below the accent line
 - Copyright: Calibri, 8pt, at bottom-left x ≈ 0.58", y ≈ 6.48"
 
@@ -254,7 +256,7 @@ function createTitleSlide(pres, opts) {
 ```javascript
 function createAgendaSlide(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Left image (full-bleed, ~1/3 of slide)
   // If you have an image path, use slide.addImage():
@@ -268,14 +270,14 @@ function createAgendaSlide(pres, opts) {
     // Fallback: gray placeholder for left panel
     slide.addShape(pres.shapes.RECTANGLE, {
       x: 0, y: 0, w: 4.11, h: 6.52,
-      fill: { color: "3F3F3F" },
+      fill: { color: palette.textBody },
     });
   }
 
   // "Agenda" title (bold, dark, right panel)
   slide.addText(opts.title || "Agenda", {
     x: 5.06, y: 0.37, w: 4, h: 0.4,
-    fontSize: 28, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 28, fontFace: "Century Gothic", color: palette.textBody,
     bold: true, valign: "top", margin: 0,
     charSpacing: 0.5,
   });
@@ -283,7 +285,7 @@ function createAgendaSlide(pres, opts) {
   // Dark blue accent line below title
   slide.addShape(pres.shapes.LINE, {
     x: 5.06, y: 0.84, w: 1.63, h: 0,
-    line: { color: "24408F", width: 2.5 },
+    line: { color: palette.primary, width: 2.5 },
   });
 
   // Agenda items
@@ -298,13 +300,13 @@ function createAgendaSlide(pres, opts) {
     // Number (bold, dark blue)
     slide.addText(String(item.num || i + 1).padStart(2, "0"), {
       x: startX, y, w: numW, h: rowH,
-      fontSize: 14, fontFace: "Century Gothic", color: "24408F",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.primary,
       bold: true, valign: "middle", margin: 0,
     });
     // Topic name
     slide.addText(item.title.toUpperCase(), {
       x: startX + numW + 0.15, y, w: 6.5, h: rowH,
-      fontSize: 14, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textBody,
       bold: true, valign: "middle", margin: 0,
     });
   });
@@ -312,7 +314,7 @@ function createAgendaSlide(pres, opts) {
   // Copyright text (bottom-left)
   slide.addText("© 2026 The Capital Markets Company Sàrl. Capco Confidential. All rights reserved.", {
     x: 0.58, y: 6.48, w: 4, h: 0.15,
-    fontSize: 8, fontFace: "Calibri", color: "AFB1B5",
+    fontSize: 8, fontFace: "Calibri", color: palette.border,
     valign: "top", margin: 0,
   });
 
@@ -322,7 +324,7 @@ function createAgendaSlide(pres, opts) {
 
 **Notes:**
 - When using the template file with the editing workflow, the left image and accent line are inherited from `slideLayout3` ("Agenda Slide"). You only need to populate the title placeholder text and add agenda items.
-- The accent line uses `24408F` (dark blue), not teal — this matches the 2026 Capco template branding.
+- The accent line uses `palette.primary` — derived from the externally selected color palette.
 - For best results with the full template aesthetic (image, Wipro logo, etc.), use the editing workflow rather than creating from scratch.
 
 ---
@@ -337,7 +339,7 @@ function createAgendaSlide(pres, opts) {
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  01. SLIDE TITLE                                        │
-│  ──────────────── (thin teal line)                      │
+│  ──────────────── (thin accent line)                      │
 │  Bold tagline / key statement                           │
 │                                                         │
 │  Body paragraph text with detailed description          │
@@ -351,34 +353,34 @@ function createAgendaSlide(pres, opts) {
 ```javascript
 function createIntroSlide(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Section number + title
   slide.addText([
-    { text: opts.sectionNum + ". ", options: { bold: true, color: "000000" } },
-    { text: opts.title, options: { bold: false, color: "000000" } },
+    { text: opts.sectionNum + ". ", options: { bold: true, color: palette.textDark } },
+    { text: opts.title, options: { bold: false, color: palette.textDark } },
   ], {
     x: 0.6, y: 0.4, w: 10, h: 0.6,
     fontSize: 26, fontFace: "Century Gothic", valign: "bottom", margin: 0,
   });
 
-  // Teal accent line under title
+  // Accent line under title
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 1.1, w: 12.13, h: 0,
-    line: { color: "00868C", width: 1.5 },
+    line: { color: palette.primary, width: 1.5 },
   });
 
   // Bold tagline
   slide.addText(opts.tagline, {
     x: 0.6, y: 1.4, w: 10, h: 0.5,
-    fontSize: 18, fontFace: "Century Gothic", color: "000000",
+    fontSize: 18, fontFace: "Century Gothic", color: palette.textDark,
     bold: true, valign: "top", margin: 0,
   });
 
   // Body text
   slide.addText(opts.body, {
     x: 0.6, y: 2.1, w: 10, h: 3.5,
-    fontSize: 13, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 13, fontFace: "Century Gothic", color: palette.textBody,
     valign: "top", margin: 0, lineSpacingMultiple: 1.3,
   });
 
@@ -415,7 +417,7 @@ function createIntroSlide(pres, opts) {
 ```javascript
 function createExecSummarySlide(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title with pipe separator
   slide.addText([
@@ -423,20 +425,20 @@ function createExecSummarySlide(pres, opts) {
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
-    fontSize: 26, fontFace: "Century Gothic", color: "000000",
+    fontSize: 26, fontFace: "Century Gothic", color: palette.textDark,
     valign: "bottom", margin: 0,
   });
 
-  // Teal line
+  // Accent line
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 0.9, w: 12.13, h: 0,
-    line: { color: "00868C", width: 1.5 },
+    line: { color: palette.primary, width: 1.5 },
   });
 
   // Description
   slide.addText(opts.description, {
     x: 0.6, y: 1.0, w: 12, h: 0.4,
-    fontSize: 13, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 13, fontFace: "Century Gothic", color: palette.textBody,
     valign: "top", margin: 0,
   });
 
@@ -445,7 +447,7 @@ function createExecSummarySlide(pres, opts) {
   const sideW = 2.9;
   slide.addShape(pres.shapes.RECTANGLE, {
     x: sideX, y: 1.5, w: sideW, h: 3.7,
-    fill: { color: "F2F2F2" },
+    fill: { color: palette.lightGray },
   });
 
   // Sidebar content
@@ -454,12 +456,12 @@ function createExecSummarySlide(pres, opts) {
     const yOff = 1.65 + i * 0.85;
     slide.addText(item.label, {
       x: sideX + 0.15, y: yOff, w: sideW - 0.3, h: 0.3,
-      fontSize: 12, fontFace: "Century Gothic", color: "00868C",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.primary,
       bold: true, valign: "top", margin: 0,
     });
     slide.addText(item.text, {
       x: sideX + 0.15, y: yOff + 0.3, w: sideW - 0.3, h: 0.5,
-      fontSize: 11, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 11, fontFace: "Century Gothic", color: palette.textBody,
       valign: "top", margin: 0,
     });
   });
@@ -467,7 +469,7 @@ function createExecSummarySlide(pres, opts) {
   // Vertical divider
   slide.addShape(pres.shapes.LINE, {
     x: 3.57, y: 1.5, w: 0, h: 5.3,
-    line: { color: "D8D8D8", width: 0.75 },
+    line: { color: palette.border, width: 0.75 },
   });
 
   // Three content columns
@@ -478,19 +480,19 @@ function createExecSummarySlide(pres, opts) {
 
   columns.forEach((col, i) => {
     const x = colStartX + i * (colW + colGap);
-    // Column header with teal icon circle
+    // Column header with accent icon circle
     slide.addShape(pres.shapes.OVAL, {
       x: x, y: 1.5, w: 0.47, h: 0.47,
-      fill: { color: "00868C" },
+      fill: { color: palette.primary },
     });
     slide.addText(col.header, {
       x: x, y: 2.1, w: colW, h: 0.3,
-      fontSize: 14, fontFace: "Century Gothic", color: "000000",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "top", margin: 0,
     });
     slide.addText(col.body, {
       x: x, y: 2.45, w: colW, h: 2.5,
-      fontSize: 11, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 11, fontFace: "Century Gothic", color: palette.textBody,
       valign: "top", margin: 0,
     });
   });
@@ -499,11 +501,11 @@ function createExecSummarySlide(pres, opts) {
   if (opts.insight) {
     slide.addShape(pres.shapes.RECTANGLE, {
       x: 3.8, y: 5.45, w: 9, h: 1.4,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
     slide.addText(opts.insight, {
       x: 3.95, y: 5.55, w: 8.7, h: 1.2,
-      fontSize: 12, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.textBody,
       valign: "top", margin: 0,
     });
   }
@@ -539,7 +541,7 @@ function createExecSummarySlide(pres, opts) {
 ```javascript
 function createOfferingsGrid(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title
   slide.addText([
@@ -547,20 +549,20 @@ function createOfferingsGrid(pres, opts) {
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
-    fontSize: 26, fontFace: "Century Gothic", color: "000000",
+    fontSize: 26, fontFace: "Century Gothic", color: palette.textDark,
     valign: "bottom", margin: 0,
   });
 
-  // Teal line
+  // Accent line
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 0.9, w: 12.13, h: 0,
-    line: { color: "00868C", width: 1.5 },
+    line: { color: palette.primary, width: 1.5 },
   });
 
   // Description
   slide.addText(opts.description, {
     x: 0.6, y: 1.0, w: 12, h: 0.35,
-    fontSize: 13, fontFace: "Century Gothic", color: "3F3F3F",
+    fontSize: 13, fontFace: "Century Gothic", color: palette.textBody,
     valign: "top", margin: 0,
   });
 
@@ -579,19 +581,19 @@ function createOfferingsGrid(pres, opts) {
     // Card background
     slide.addShape(pres.shapes.RECTANGLE, {
       x, y: cardY, w: cardW, h: cardH,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
 
-    // Card header with teal top bar
+    // Card header with accent top bar
     slide.addShape(pres.shapes.RECTANGLE, {
       x, y: cardY, w: cardW, h: 0.06,
-      fill: { color: "00868C" },
+      fill: { color: palette.primary },
     });
 
     // Header text
     slide.addText(offering.title, {
       x: x + 0.1, y: cardY + 0.15, w: cardW - 0.2, h: 0.35,
-      fontSize: 12, fontFace: "Century Gothic", color: "000000",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "top", margin: 0,
     });
 
@@ -602,7 +604,7 @@ function createOfferingsGrid(pres, opts) {
         bullet: true,
         breakLine: idx < offering.items.length - 1,
         fontSize: 11,
-        color: "3F3F3F",
+        color: palette.textBody,
       },
     }));
 
@@ -644,7 +646,7 @@ function createOfferingsGrid(pres, opts) {
 ```javascript
 function createFourColumnOverview(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title
   slide.addText([
@@ -652,14 +654,14 @@ function createFourColumnOverview(pres, opts) {
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
-    fontSize: 26, fontFace: "Century Gothic", color: "000000",
+    fontSize: 26, fontFace: "Century Gothic", color: palette.textDark,
     valign: "bottom", margin: 0,
   });
 
-  // Teal stats bar
+  // Accent stats bar
   slide.addShape(pres.shapes.RECTANGLE, {
     x: 0.6, y: 0.95, w: 12.13, h: 0.35,
-    fill: { color: "00868C" },
+    fill: { color: palette.primary },
   });
   const statsText = opts.stats.map((s, i) => ({
     text: s + (i < opts.stats.length - 1 ? "    |    " : ""),
@@ -667,7 +669,7 @@ function createFourColumnOverview(pres, opts) {
   }));
   slide.addText(statsText, {
     x: 0.6, y: 0.95, w: 12.13, h: 0.35,
-    fontSize: 13, fontFace: "Century Gothic", color: "FFFFFF",
+    fontSize: 13, fontFace: "Century Gothic", color: palette.textLight,
     align: "center", valign: "middle", margin: 0,
   });
 
@@ -685,26 +687,26 @@ function createFourColumnOverview(pres, opts) {
     // Column background
     slide.addShape(pres.shapes.RECTANGLE, {
       x, y: colY, w: colW, h: 3.5,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
 
-    // Column header (teal top area)
+    // Column header (accent top area)
     slide.addShape(pres.shapes.RECTANGLE, {
       x, y: colY, w: colW, h: 0.75,
-      fill: { color: "00868C" },
+      fill: { color: palette.primary },
     });
 
     // Title in header
     slide.addText(col.title, {
       x: x + 0.1, y: colY + 0.1, w: colW - 0.2, h: 0.55,
-      fontSize: 13, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 13, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, valign: "middle", margin: 0,
     });
 
     // "KEY OFFERINGS:" label
     slide.addText("KEY OFFERINGS:", {
       x: x + 0.1, y: colY + 0.85, w: colW - 0.2, h: 0.25,
-      fontSize: 10, fontFace: "Century Gothic", color: "00868C",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.primary,
       bold: true, valign: "top", margin: 0,
     });
 
@@ -715,7 +717,7 @@ function createFourColumnOverview(pres, opts) {
         bullet: true,
         breakLine: idx < col.items.length - 1,
         fontSize: 10,
-        color: "3F3F3F",
+        color: palette.textBody,
       },
     }));
 
@@ -744,7 +746,7 @@ function createFourColumnOverview(pres, opts) {
 │        │ Cat 1  │ Cat 2  │ Cat 3  │ Cat 4  │ Cat 5    │
 │  ──────┼────────┼────────┼────────┼────────┼──────    │
 │  Row 1 │┌─────┐ │┌─────┐ │┌─────┐ │        │          │
-│  (teal)││item │ ││item │ ││item │ │        │          │
+│ (accent)│┌─────┐ │┌─────┐ │┌─────┐ │        │          │
 │        │└─────┘ │└─────┘ │└─────┘ │        │          │
 │  ──────┼────────┼────────┼────────┼────────┤          │
 │  Row 2 │┌─────┐ │┌─────┐ │        │┌─────┐ │          │
@@ -761,7 +763,7 @@ function createFourColumnOverview(pres, opts) {
 ```javascript
 function createServicesMatrix(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title
   slide.addText([
@@ -769,21 +771,21 @@ function createServicesMatrix(pres, opts) {
     { text: opts.title, options: { bold: true } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
-    fontSize: 26, fontFace: "Century Gothic", color: "000000",
+    fontSize: 26, fontFace: "Century Gothic", color: palette.textDark,
     valign: "bottom", margin: 0,
   });
 
-  // Teal line
+  // Accent line
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 0.9, w: 12.13, h: 0,
-    line: { color: "00868C", width: 1.5 },
+    line: { color: palette.primary, width: 1.5 },
   });
 
   // Description
   if (opts.description) {
     slide.addText(opts.description, {
       x: 0.6, y: 1.0, w: 12, h: 0.35,
-      fontSize: 12, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.textBody,
       valign: "top", margin: 0,
     });
   }
@@ -800,19 +802,19 @@ function createServicesMatrix(pres, opts) {
   // Column header background bar
   slide.addShape(pres.shapes.RECTANGLE, {
     x: startX, y: headerY, w: 12.13, h: 0.34,
-    fill: { color: "D8D8D8" },
+    fill: { color: palette.border },
   });
 
   opts.columnHeaders.forEach((header, i) => {
     slide.addText(header, {
       x: gridStartX + i * colW, y: headerY, w: colW, h: 0.34,
-      fontSize: 11, fontFace: "Century Gothic", color: "000000",
+      fontSize: 11, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
   });
 
   // Rows
-  const rowColors = ["00868C", "033C11", "C00D0D"];
+  const rowColors = [palette.primary, palette.darkGreen, palette.alertRed];
   const rowH = 1.13;
   const rowStartY = headerY + 0.34;
 
@@ -827,14 +829,14 @@ function createServicesMatrix(pres, opts) {
     });
     slide.addText(row.label, {
       x: startX + 0.15, y, w: rowLabelW - 0.3, h: rowH,
-      fontSize: 14, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, valign: "middle", margin: 0,
     });
 
     // Row content cells
     slide.addShape(pres.shapes.RECTANGLE, {
       x: gridStartX, y, w: gridW, h: rowH,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
 
     // Items in grid cells
@@ -847,7 +849,7 @@ function createServicesMatrix(pres, opts) {
         });
         slide.addText(item.text, {
           x: cellX + 0.05, y: y + 0.15, w: colW - 0.3, h: 0.45,
-          fontSize: 10, fontFace: "Century Gothic", color: "FFFFFF",
+          fontSize: 10, fontFace: "Century Gothic", color: palette.textLight,
           valign: "middle", margin: 0,
         });
       }
@@ -883,7 +885,7 @@ function createServicesMatrix(pres, opts) {
 ```javascript
 function createKPISlide(pres, opts) {
   const slide = pres.addSlide();
-  slide.background = { color: "FFFFFF" };
+  slide.background = { color: palette.lightBg };
 
   // Title
   slide.addText([
@@ -891,14 +893,14 @@ function createKPISlide(pres, opts) {
     { text: opts.title, options: { bold: true } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
-    fontSize: 26, fontFace: "Century Gothic", color: "000000",
+    fontSize: 26, fontFace: "Century Gothic", color: palette.textDark,
     valign: "bottom", margin: 0,
   });
 
-  // Teal line
+  // Accent line
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 0.9, w: 12.13, h: 0,
-    line: { color: "00868C", width: 1.5 },
+    line: { color: palette.primary, width: 1.5 },
   });
 
   // KPI cards
@@ -915,14 +917,14 @@ function createKPISlide(pres, opts) {
     // Big number
     slide.addText(kpi.value, {
       x, y: cardY, w: cardW, h: 1.5,
-      fontSize: 51, fontFace: "Century Gothic", color: "00868C",
+      fontSize: 51, fontFace: "Century Gothic", color: palette.primary,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
     // Label
     slide.addText(kpi.label.toUpperCase(), {
       x, y: cardY + 1.6, w: cardW, h: 0.6,
-      fontSize: 13, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 13, fontFace: "Century Gothic", color: palette.textBody,
       bold: true, align: "center", valign: "top", margin: 0,
     });
 
@@ -930,7 +932,7 @@ function createKPISlide(pres, opts) {
     if (kpi.sublabel) {
       slide.addText(kpi.sublabel, {
         x, y: cardY + 2.1, w: cardW, h: 0.4,
-        fontSize: 11, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 11, fontFace: "Century Gothic", color: palette.textMuted,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -954,7 +956,7 @@ function createKPISlide(pres, opts) {
 Strategy A: Component + Context Strip
 ┌─────────────────────────────────────────────────────────┐
 │  04. TITLE | SUBTITLE                                    │
-│  ──────────────── (teal line)                           │
+│  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────────────────────────────────────────────────┐  │
 │  │         VISUAL COMPONENT (e.g., pyramid)           │  │
@@ -967,7 +969,7 @@ Strategy A: Component + Context Strip
 Strategy B: Source Cards Above + Component Below
 ┌─────────────────────────────────────────────────────────┐
 │  03. TITLE | SUBTITLE                                    │
-│  ──────────────── (teal line)                           │
+│  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────┐┌────────┐┌────────┐  (source/context cards) │
 │  │Card 1  ││Card 2  ││Card 3  │                         │
@@ -980,12 +982,12 @@ Strategy B: Source Cards Above + Component Below
 Strategy C: Component + Section Divider Line + Second Component/Grid
 ┌─────────────────────────────────────────────────────────┐
 │  04. TITLE | SUBTITLE                                    │
-│  ──────────────── (teal line)                           │
+│  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────────────────────────────────────────────────┐  │
 │  │     COMPONENT 1 (e.g., role cards)                 │  │
 │  └────────────────────────────────────────────────────┘  │
-│  ─────────── (teal section divider line) ──────────────  │
+│  ─────────── (accent section divider line) ──────────────  │
 │  SUBSECTION TITLE | SUBTITLE                             │
 │  ┌────────────────────────────────────────────────────┐  │
 │  │     COMPONENT 2 (e.g., numbered agenda)            │  │
@@ -995,7 +997,7 @@ Strategy C: Component + Section Divider Line + Second Component/Grid
 Strategy D: Big Number + Component Side-by-Side
 ┌─────────────────────────────────────────────────────────┐
 │  01. TITLE | SUBTITLE                                    │
-│  ──────────────── (teal line)                           │
+│  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌──────────┐  ┌──────────────────────────────────────┐  │
 │  │          │  │                                      │  │
@@ -1047,7 +1049,7 @@ Every content slide follows this vertical structure:
 ```
 HEADER ZONE (y: 0.3-1.4)
   → Section number + title + pipe separator
-  → Teal underline
+  → Accent underline
   → Description line
 
 CONTENT ZONE (y: 1.4-6.9)
@@ -1076,8 +1078,8 @@ Merge two slides into one when:
 | Element | Spacing |
 |---------|---------|
 | Title top margin | 0.3" from top |
-| Title to teal line | 0.6" from top of title |
-| Teal line to content | 0.1-0.15" gap |
+| Title to accent line | 0.6" from top of title |
+| Accent line to content | 0.1-0.15" gap |
 | Between card columns | 0.08-0.2" |
 | Between card rows | 0.1-0.2" |
 | Card internal padding | 0.1-0.15" |
@@ -1142,7 +1144,7 @@ Recommended slide order (NO section dividers — rhythm comes from consistent he
 
 1. **No standard 10" width** — Always use `LAYOUT_WIDE` (13.33" × 7.5")
 2. **No fonts other than Century Gothic** — Use Century Gothic for everything; Arial only as fallback in dense text
-3. **No colors outside the palette** — Stick to the defined teal/dark/gray palette
+3. **No colors outside the palette** — Only use colors from the externally provided palette and the neutral text/background colors
 4. **No text-only slides** — Every content slide needs structural elements (cards, grids, bars)
 5. **No bullet walls** — Max 5 items per bullet list; prefer card grids instead
 6. **No centered body text** — Left-align all body copy; center only big number callouts
@@ -1168,7 +1170,7 @@ const ReactDOMServer = require("react-dom/server");
 const sharp = require("sharp");
 
 // --- Icon Utilities ---
-function renderIconSvg(IconComponent, color = "#000000", size = 256) {
+function renderIconSvg(IconComponent, color = "#" + palette.textDark, size = 256) {
   return ReactDOMServer.renderToStaticMarkup(
     React.createElement(IconComponent, { color, size: String(size) })
   );
@@ -1181,27 +1183,31 @@ async function iconToBase64Png(IconComponent, color, size = 256) {
 }
 
 // --- Palette ---
+// IMPORTANT: Replace the placeholder values below with the actual colors
+// from the "Color & Typography Customization" section provided in the prompt.
+// Map Color 1 → primary, Color 2 → accent, Color 3+ → additional categories.
+// Derive primaryLight (lighten primary ~20%) and primaryPale (lighten primary ~60%).
 const palette = {
   lightBg: "FFFFFF",
   lightGray: "F2F2F2",
-  primary: "00868C",
-  primaryLight: "00B3BB",
-  primaryPale: "B2CFD0",
-  accent: "00BFCB",
+  primary: "COLOR_1_FROM_PALETTE",      // ← Replace with Color 1
+  primaryLight: "COLOR_1_LIGHTENED",     // ← Derive: lighten Color 1 ~20%
+  primaryPale: "COLOR_1_VERY_LIGHT",     // ← Derive: lighten Color 1 ~60%
+  accent: "COLOR_2_FROM_PALETTE",        // ← Replace with Color 2
   textDark: "000000",
   textBody: "3F3F3F",
   textMuted: "5B5D60",
   textSubtle: "57677A",
   textLight: "FFFFFF",
-  alertRed: "C00D0D",
-  darkGreen: "033C11",
+  alertRed: "COLOR_3_OR_CC0000",         // ← Replace with Color 3 or use a red
+  darkGreen: "COLOR_4_OR_2D6A2E",        // ← Replace with Color 4 or use a green
   cardBg: "FFFFFF",
   border: "D8D8D8",
 };
 
 // --- Helper: Fresh shadow/style factory ---
 const makeShadow = () => ({
-  type: "outer", blur: 4, offset: 1, angle: 135, color: "000000", opacity: 0.08,
+  type: "outer", blur: 4, offset: 1, angle: 135, color: palette.textDark, opacity: 0.08,
 });
 
 // --- Slide Master Definitions ---
@@ -1225,7 +1231,7 @@ function addSlideHeader(slide, pres, sectionNum, title, subtitle, description) {
     fontSize: 26, fontFace: "Century Gothic", valign: "bottom", margin: 0,
   });
 
-  // Teal line
+  // Accent line
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y: 0.9, w: 12.13, h: 0,
     line: { color: palette.primary, width: 1.5 },
@@ -1241,7 +1247,7 @@ function addSlideHeader(slide, pres, sectionNum, title, subtitle, description) {
   }
 }
 
-// --- Mid-Slide Divider (teal line + sub-heading for combined slides) ---
+// --- Mid-Slide Divider (accent line + sub-heading for combined slides) ---
 function addMidSlideDivider(slide, pres, y, title, subtitle) {
   slide.addShape(pres.shapes.LINE, {
     x: 0.6, y, w: 12.13, h: 0,
@@ -1306,7 +1312,7 @@ After generating the deck, verify:
 
 - [ ] **LAYOUT_WIDE used**: Slides are 13.33" × 7.5" (not 10" × 5.625")
 - [ ] **Century Gothic everywhere**: All text uses Century Gothic (or Arial as body fallback)
-- [ ] **Teal accent line on every content slide**: Horizontal line at y ≈ 0.9"
+- [ ] **Primary accent line on every content slide**: Horizontal line at y ≈ 0.9" using palette.primary
 - [ ] **Section numbers present**: All titles start with "XX." prefix
 - [ ] **No dark slides**: All slides use white/light backgrounds — no dark section dividers or closing slides
 - [ ] **Visual components embedded**: No visual component (pyramid, chevron, quadrant, etc.) is the sole element on a slide — always paired with context cards, info grids, or source cards
