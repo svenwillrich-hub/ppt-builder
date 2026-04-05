@@ -165,7 +165,7 @@
   const $$ = function (sel) { return [...document.querySelectorAll(sel)]; };
 
   // === INIT ===
-  document.addEventListener('DOMContentLoaded', async function () {
+  document.addEventListener('DOMContentLoaded', function () {
     loadSettings();
     bindEvents();
     updateStep(1);
@@ -176,13 +176,8 @@
     // Render font selector
     renderFontSelector();
 
-    // Init CLI check — gates the app
-    var ok = await initCliCheck();
-    if (ok) {
-      var overlay = $('#init-overlay');
-      overlay.classList.add('fade-out');
-      setTimeout(function() { overlay.classList.add('hidden'); }, 400);
-    }
+    // Non-blocking CLI check — runs in background
+    checkClaudeBackground();
   });
 
   // Ctrl+Enter shortcut
@@ -302,14 +297,12 @@
     // CLI status
     $('#claude-status').addEventListener('click', checkCliStatus);
 
-    // Refine sidebar
-    $('#refine-toggle').addEventListener('click', function () {
-      $('#refine-sidebar').classList.remove('collapsed');
-    });
-    $('#refine-sidebar-close').addEventListener('click', function () {
-      $('#refine-sidebar').classList.add('collapsed');
-    });
-    $('#refine-apply').addEventListener('click', handleRefineApply);
+    // Sidebar update button
+    $('#btn-sidebar-update').addEventListener('click', handleSidebarUpdate);
+
+    // Revision bar on Result page
+    $('#btn-revise').addEventListener('click', handleReviseClick);
+    $('#revision-global').addEventListener('input', updateRevisionHint);
 
     // Step navigation (clickable completed steps)
     $$('.step-indicator .step').forEach(function (el) {
@@ -392,6 +385,8 @@
     // Step 4
     $('#btn-download').addEventListener('click', downloadFile);
     $('#btn-visual-qa').addEventListener('click', runVisualQA);
+    $('#btn-qa-fix').addEventListener('click', startQAFix);
+    $('#btn-qa-dismiss').addEventListener('click', dismissQA);
     $('#btn-new-presentation').addEventListener('click', function () {
       state.slides = [];
       state.revisions = [];
@@ -433,14 +428,13 @@
       $('#customize-panel').classList.toggle('disabled', !this.checked);
     });
 
-    // Init retry + skip
-    $('#init-retry').addEventListener('click', async function () {
-      var ok = await initCliCheck();
-      if (ok) { var o = $('#init-overlay'); o.classList.add('fade-out'); setTimeout(function() { o.classList.add('hidden'); }, 400); }
+    // CLI warning banner
+    $('#cli-warning-retry').addEventListener('click', function () {
+      $('#cli-warning').hidden = true;
+      checkClaudeBackground();
     });
-    $('#init-skip').addEventListener('click', function (e) {
-      e.preventDefault();
-      var o = $('#init-overlay'); o.classList.add('fade-out'); setTimeout(function() { o.classList.add('hidden'); }, 400);
+    $('#cli-warning-dismiss').addEventListener('click', function () {
+      $('#cli-warning').hidden = true;
     });
 
     // Font selector
@@ -455,64 +449,37 @@
     });
   }
 
-  // === INIT CLI CHECK ===
-  async function initCliCheck() {
-    $('#init-status').textContent = 'Checking Claude CLI connection...';
-    $('#init-retry').hidden = true;
-    // Show skip link after 10s
-    setTimeout(function() { $('#init-skip').style.display = 'inline'; }, 10000);
-    try {
-      var res = await fetch(API + '/claude-test', { signal: AbortSignal.timeout(25000) });
-      var data = await res.json();
-      updateCliDot(data);
-      if (data.checks.cliTest && data.checks.cliTest.ok) return true;
-      $('#init-status').textContent = 'Claude CLI not responding. Check Docker setup.';
-      $('#init-retry').hidden = false;
-      return false;
-    } catch (e) {
-      $('#init-status').textContent = 'Backend unreachable. Is Docker running?';
-      $('#init-retry').hidden = false;
-      return false;
-    }
-  }
-
-  function updateCliDot(data) {
-    var dot = $('#claude-status-dot');
-    var text = $('#claude-status-text');
-    if (data.checks.cliTest && data.checks.cliTest.ok) {
-      dot.className = 'status-dot ok';
-      text.textContent = 'CLI connected';
-    } else if (data.allOk) {
-      dot.className = 'status-dot ok';
-      text.textContent = 'CLI connected';
-    } else {
-      dot.className = 'status-dot error';
-      var fk = Object.keys(data.checks).find(function (k) { return !data.checks[k].ok; });
-      text.textContent = ((data.checks[fk] && data.checks[fk].error) || fk + ' failed').slice(0, 30);
-    }
-  }
-
-  // === CLI STATUS ===
-  async function checkCliStatus() {
+  // === BACKGROUND CLI CHECK ===
+  async function checkClaudeBackground() {
     var dot = $('#claude-status-dot');
     var text = $('#claude-status-text');
     dot.className = 'status-dot loading';
     text.textContent = 'Checking...';
     try {
-      var res = await fetch(API + '/claude-test');
+      var res = await fetch(API + '/claude-test', { signal: AbortSignal.timeout(30000) });
       var data = await res.json();
-      if (data.allOk) {
+      if (data.checks.cliTest && data.checks.cliTest.ok) {
         dot.className = 'status-dot ok';
         text.textContent = 'CLI connected';
+        $('#cli-warning').hidden = true;
       } else {
         dot.className = 'status-dot error';
         var fk = Object.keys(data.checks).find(function (k) { return !data.checks[k].ok; });
         text.textContent = ((data.checks[fk] && data.checks[fk].error) || fk + ' failed').slice(0, 30);
+        $('#cli-warning-text').textContent = 'Claude CLI check failed: ' + text.textContent + '. Generation may not work.';
+        $('#cli-warning').hidden = false;
       }
     } catch (e) {
       dot.className = 'status-dot error';
       text.textContent = 'Backend unreachable';
+      $('#cli-warning-text').textContent = 'Backend unreachable. Is Docker running?';
+      $('#cli-warning').hidden = false;
     }
+  }
+
+  // === CLI STATUS (sidebar dot click) ===
+  async function checkCliStatus() {
+    checkClaudeBackground();
   }
 
   // === FILE HANDLING ===
@@ -695,38 +662,45 @@
     $$('.step-content').forEach(function (el) { el.classList.remove('active'); });
     var target = $('#step-' + step);
     if (target) target.classList.add('active');
-    updateRefineContext(step);
+    // Show/hide sidebar update section based on step
+    var updateSection = $('#sidebar-update-section');
+    if (updateSection) updateSection.hidden = (step !== 4);
   }
 
-  function updateRefineContext(step) {
-    var ctx = $('#refine-context');
-    if (!ctx) return;
-    switch (step) {
-      case 1: ctx.textContent = 'Modify your input content or instructions.'; break;
-      case 2: ctx.textContent = 'Re-analyze with different instructions or adjust the outline.'; break;
-      case 3: ctx.textContent = 'Generation in progress. Wait for completion.'; break;
-      case 4: ctx.textContent = 'Describe changes to revise the presentation.'; break;
-      default: ctx.textContent = 'Add instructions to refine the current output.';
-    }
-  }
-
-  function handleRefineApply() {
-    var input = $('#refine-input').value.trim();
+  function handleSidebarUpdate() {
+    var input = $('#sidebar-update-input').value.trim();
     if (!input) {
-      toast('Please enter instructions', 'warning');
+      toast('Please enter update instructions', 'warning');
       return;
     }
-    if (state.currentStep === 2) {
-      $('#refine-sidebar').classList.add('collapsed');
-      startAnalysis(input);
-    } else if (state.currentStep === 4) {
-      state.refineInstructions = input;
-      $('#refine-sidebar').classList.add('collapsed');
-      startRevision();
-    } else {
-      toast('Refine not available on this step', 'warning');
+    state.refineInstructions = input;
+    $('#sidebar-update-input').value = '';
+    startRevision();
+  }
+
+  function handleReviseClick() {
+    var globalInstr = ($('#revision-global').value || '').trim();
+    var slideNotes = Object.entries(state.slideComments)
+      .filter(function (entry) { return entry[1] && entry[1].trim(); })
+      .map(function (entry) { return '- Slide ' + entry[0] + ': ' + entry[1].trim(); })
+      .join('\n');
+    var instructions = [globalInstr, slideNotes].filter(Boolean).join('\n\n## Per-slide notes:\n');
+    if (!instructions.trim()) {
+      toast('Please add revision notes (general or per-slide)', 'warning');
+      return;
     }
-    $('#refine-input').value = '';
+    state.refineInstructions = instructions;
+    $('#revision-global').value = '';
+    startRevision();
+  }
+
+  function updateRevisionHint() {
+    var noteCount = Object.values(state.slideComments).filter(function (v) { return v && v.trim(); }).length;
+    var hasGlobal = ($('#revision-global').value || '').trim().length > 0;
+    var parts = [];
+    if (noteCount > 0) parts.push(noteCount + ' slide note' + (noteCount !== 1 ? 's' : ''));
+    if (hasGlobal) parts.push('instructions');
+    $('#revision-bar-hint').textContent = parts.length > 0 ? parts.join(' + ') : '';
   }
 
   // === TIMERS ===
@@ -1212,6 +1186,7 @@
         viewer.querySelectorAll('.slide-viewer-comment').forEach(function (ta) {
           ta.addEventListener('input', function () {
             state.slideComments[ta.dataset.slide] = ta.value;
+            updateRevisionHint();
           });
         });
       } else {
@@ -1256,24 +1231,30 @@
 
   // === STYLE CHANGE ON RESULT ===
   function promptStyleRevision(changeDescription) {
-    // Pre-fill the refine sidebar and open it
-    $('#refine-sidebar').classList.remove('collapsed');
-    var current = $('#refine-input').value;
+    // Pre-fill the sidebar update input
+    var input = $('#sidebar-update-input');
+    var current = input.value;
     var newInstr = 'Apply visual update: ' + changeDescription + '. Regenerate the PPTX with the updated style/colors while keeping all content identical.';
-    $('#refine-input').value = current ? current + '\n\n' + newInstr : newInstr;
-    $('#refine-context').textContent = 'Style changed — click Apply to update the presentation.';
-    toast('Style changed — use Refine to apply to your deck', 'info');
+    input.value = current ? current + '\n\n' + newInstr : newInstr;
+    toast('Style changed — click Update in the sidebar to apply', 'info');
   }
 
-  // === VISUAL QA ===
+  // === VISUAL QA WIZARD ===
   async function runVisualQA() {
     if (!state.generatedFilename) { toast('No presentation to QA', 'warning'); return; }
 
     var qaBtn = $('#btn-visual-qa');
-    var qaResult = $('#qa-result');
+    var qaProgress = $('#qa-progress');
+    var qaResults = $('#qa-results');
+
+    // Reset UI
     qaBtn.disabled = true;
     qaBtn.textContent = 'Running QA...';
-    qaResult.hidden = true;
+    qaResults.hidden = true;
+    $('#qa-fix-section').hidden = true;
+    qaProgress.hidden = false;
+    $('#qa-progress-fill').style.width = '10%';
+    $('#qa-progress-text').textContent = 'Analyzing presentation...';
 
     try {
       var response = await fetch(API + '/qa', {
@@ -1301,18 +1282,37 @@
           if (!lines[i].startsWith('data: ')) continue;
           try {
             var event = JSON.parse(lines[i].slice(6));
-            if (event.type === 'qa_result') qaData = event.data;
-            else if (event.type === 'log') { /* ignore QA logs */ }
+            if (event.type === 'qa_result') {
+              qaData = event.data;
+            } else if (event.type === 'log') {
+              // Update progress based on log content
+              var slideMatch = event.message && event.message.match(/[Ss]lide\s+(\d+)/);
+              if (slideMatch && state.slides.length > 0) {
+                var slideNum = parseInt(slideMatch[1]);
+                var pct = Math.min(90, Math.round((slideNum / state.slides.length) * 80) + 10);
+                $('#qa-progress-fill').style.width = pct + '%';
+                $('#qa-progress-text').textContent = 'Analyzing slide ' + slideNum + ' of ' + state.slides.length + '...';
+              }
+            }
           } catch (e) {}
         }
       }
 
+      // Finish progress
+      $('#qa-progress-fill').style.width = '100%';
+      $('#qa-progress-text').textContent = 'Analysis complete';
+
       if (qaData) {
-        renderQAResult(qaData);
+        setTimeout(function () {
+          qaProgress.hidden = true;
+          renderQAWizard(qaData);
+        }, 400);
       } else {
+        qaProgress.hidden = true;
         toast('QA check returned no result', 'warning');
       }
     } catch (e) {
+      qaProgress.hidden = true;
       toast('QA failed: ' + e.message, 'error');
     }
 
@@ -1320,50 +1320,134 @@
     qaBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11v-1m0-4v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg> Run Visual QA Check';
   }
 
-  function renderQAResult(data) {
-    var qaResult = $('#qa-result');
+  function renderQAWizard(data) {
+    var qaResults = $('#qa-results');
     var scoreClass = data.overallScore >= 8 ? 'excellent' : data.overallScore >= 6 ? 'good' : data.overallScore >= 4 ? 'needs-work' : 'poor';
 
-    var issuesHtml = '';
-    if (data.issues && data.issues.length > 0) {
-      issuesHtml = '<div class="qa-section-title">Issues</div>' +
-        data.issues.map(function (iss) {
-          var sev = iss.severity === 'error' ? 'error' : iss.severity === 'warning' ? 'warning' : 'info';
-          return '<div class="qa-issue ' + sev + '"><span class="qa-issue-badge">' + (iss.slide ? 'Slide ' + iss.slide : '') + ' ' + sev + '</span> ' + escapeHtml(iss.issue) + '</div>';
-        }).join('');
+    // Count total issues
+    var totalIssues = 0;
+    var totalErrors = 0;
+    if (data.slides) {
+      data.slides.forEach(function (s) {
+        if (s.issues) {
+          totalIssues += s.issues.length;
+          s.issues.forEach(function (iss) { if (iss.severity === 'error') totalErrors++; });
+        }
+      });
     }
 
-    var strengthsHtml = '';
-    if (data.strengths && data.strengths.length > 0) {
-      strengthsHtml = '<div class="qa-section-title">Strengths</div><ul class="qa-list">' +
-        data.strengths.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul>';
-    }
-
-    var suggestionsHtml = '';
-    if (data.suggestions && data.suggestions.length > 0) {
-      suggestionsHtml = '<div class="qa-section-title">Suggestions</div><ul class="qa-list">' +
-        data.suggestions.map(function (s) { return '<li style="color:var(--accent)">' + escapeHtml(s) + '</li>'; }).join('') + '</ul>';
-    }
-
-    qaResult.innerHTML =
+    // Render summary
+    $('#qa-summary').innerHTML =
       '<div class="qa-score-row">' +
         '<div class="qa-score-circle ' + scoreClass + '">' + data.overallScore + '</div>' +
-        '<div><div class="qa-verdict">' + escapeHtml(data.overallVerdict || '') + '</div><div style="font-size:13px;color:var(--text-secondary)">' + (data.issues ? data.issues.length : 0) + ' issues found</div></div>' +
-      '</div>' +
-      issuesHtml + strengthsHtml + suggestionsHtml;
+        '<div>' +
+          '<div class="qa-verdict">' + escapeHtml(data.overallVerdict || 'Unknown') + '</div>' +
+          '<div class="qa-issue-count">' + totalIssues + ' issue' + (totalIssues !== 1 ? 's' : '') + ' found' +
+          (totalErrors > 0 ? ' (' + totalErrors + ' critical)' : '') + '</div>' +
+        '</div>' +
+      '</div>';
 
-    qaResult.hidden = false;
-    qaResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Render per-slide cards
+    var cardsHtml = '';
+    if (data.slides && data.slides.length > 0) {
+      data.slides.forEach(function (slide) {
+        var issueCount = slide.issues ? slide.issues.length : 0;
+        var hasErrors = slide.issues && slide.issues.some(function (i) { return i.severity === 'error'; });
+        var cardClass = issueCount === 0 ? 'clean' : (hasErrors ? 'has-errors' : 'has-issues');
+        var badgeClass = issueCount === 0 ? 'clean' : (hasErrors ? 'errors' : 'issues');
+        var badgeText = issueCount === 0 ? 'OK' : issueCount + ' issue' + (issueCount !== 1 ? 's' : '');
+
+        var issuesHtml = '';
+        if (slide.issues && slide.issues.length > 0) {
+          issuesHtml = slide.issues.map(function (iss) {
+            var sev = iss.severity === 'error' ? 'error' : iss.severity === 'warning' ? 'warning' : 'info';
+            return '<div class="qa-issue ' + sev + '">' +
+              '<span class="qa-issue-severity">' + sev + '</span>' +
+              '<div class="qa-issue-text">' + escapeHtml(iss.issue) +
+                (iss.fix ? '<div class="qa-issue-fix">Fix: ' + escapeHtml(iss.fix) + '</div>' : '') +
+              '</div>' +
+            '</div>';
+          }).join('');
+        }
+
+        var strengthsHtml = '';
+        if (slide.strengths && slide.strengths.length > 0) {
+          strengthsHtml = '<ul class="qa-strengths">' +
+            slide.strengths.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') +
+          '</ul>';
+        }
+
+        cardsHtml += '<div class="qa-slide-card ' + cardClass + '">' +
+          '<div class="qa-slide-card-header" data-slide-qa="' + slide.slideNumber + '">' +
+            '<span class="qa-slide-title">Slide ' + slide.slideNumber + ': ' + escapeHtml(slide.title || '') + '</span>' +
+            '<span class="qa-slide-badge ' + badgeClass + '">' + badgeText + '</span>' +
+          '</div>' +
+          '<div class="qa-slide-card-body" id="qa-slide-body-' + slide.slideNumber + '"' + (issueCount === 0 ? ' hidden' : '') + '>' +
+            issuesHtml + strengthsHtml +
+          '</div>' +
+        '</div>';
+      });
+    }
+    $('#qa-slide-cards').innerHTML = cardsHtml;
+
+    // Add toggle listeners for slide cards
+    document.querySelectorAll('[data-slide-qa]').forEach(function (header) {
+      header.addEventListener('click', function () {
+        var body = $('#qa-slide-body-' + header.getAttribute('data-slide-qa'));
+        if (body) body.hidden = !body.hidden;
+      });
+    });
+
+    // Show revision plan if there are issues
+    if (totalIssues > 0 && data.revisionPlan) {
+      $('#qa-revision-plan').value = data.revisionPlan;
+      $('#qa-fix-section').hidden = false;
+    } else if (totalIssues > 0) {
+      // Build revision plan from issues
+      var plan = '';
+      if (data.slides) {
+        data.slides.forEach(function (slide) {
+          if (slide.issues && slide.issues.length > 0) {
+            slide.issues.forEach(function (iss) {
+              plan += '- Slide ' + slide.slideNumber + ': ' + (iss.fix || iss.issue) + '\n';
+            });
+          }
+        });
+      }
+      if (plan) {
+        $('#qa-revision-plan').value = plan.trim();
+        $('#qa-fix-section').hidden = false;
+      }
+    } else {
+      $('#qa-fix-section').hidden = true;
+    }
+
+    qaResults.hidden = false;
+    $('#qa-summary').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function startQAFix() {
+    var plan = $('#qa-revision-plan').value.trim();
+    if (!plan) { toast('Revision plan is empty', 'warning'); return; }
+
+    // Set refine instructions and trigger revision via Step 3
+    state.refineInstructions = plan;
+    // Reset QA UI
+    $('#qa-results').hidden = true;
+    $('#qa-fix-section').hidden = true;
+    // Start revision (this navigates to Step 3)
+    startRevision();
+  }
+
+  function dismissQA() {
+    $('#qa-results').hidden = true;
+    $('#qa-fix-section').hidden = true;
+    $('#qa-progress').hidden = true;
   }
 
   // === REVISIONS ===
   async function startRevision() {
-    var globalInstr = state.refineInstructions || '';
-    var slideNotes = Object.entries(state.slideComments)
-      .filter(function (entry) { return entry[1].trim(); })
-      .map(function (entry) { return '- Slide ' + entry[0] + ': ' + entry[1].trim(); })
-      .join('\n');
-    var instructions = [globalInstr, slideNotes].filter(Boolean).join('\n\n## Per-slide notes:\n');
+    var instructions = state.refineInstructions || '';
     if (!instructions.trim()) {
       toast('Please add revision notes', 'warning');
       return;

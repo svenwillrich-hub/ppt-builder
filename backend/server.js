@@ -210,52 +210,56 @@ app.get('/api/outputs/:filename', (req, res) => {
 });
 
 // --- Slide preview rendering ---
+// Helper: ensure slide preview PNGs exist, return local file paths
+function ensurePreviewImages(filename) {
+  const { execSync } = require('child_process');
+  const pptxPath = path.join('/app/outputs', filename);
+  const baseName = filename.replace(/\.pptx$/i, '');
+  const previewDir = path.join('/app/previews', baseName);
+
+  // Check if previews already exist
+  if (fs.existsSync(previewDir)) {
+    const images = fs.readdirSync(previewDir).filter(f => f.endsWith('.png')).sort();
+    if (images.length > 0) {
+      return {
+        apiPaths: images.map(f => `/api/preview-image/${baseName}/${f}`),
+        localPaths: images.map(f => path.join(previewDir, f))
+      };
+    }
+  }
+
+  // Generate previews
+  fs.mkdirSync(previewDir, { recursive: true });
+  execSync(
+    `libreoffice --headless --convert-to pdf --outdir "${previewDir}" "${pptxPath}" 2>&1`,
+    { timeout: 60000, encoding: 'utf-8' }
+  );
+
+  const pdfFile = path.join(previewDir, baseName + '.pdf');
+  if (fs.existsSync(pdfFile)) {
+    execSync(
+      `pdftoppm -png -r 200 "${pdfFile}" "${path.join(previewDir, 'slide')}" 2>&1`,
+      { timeout: 60000, encoding: 'utf-8' }
+    );
+    try { fs.unlinkSync(pdfFile); } catch (e) {}
+  }
+
+  const images = fs.readdirSync(previewDir).filter(f => f.endsWith('.png')).sort();
+  return {
+    apiPaths: images.map(f => `/api/preview-image/${baseName}/${f}`),
+    localPaths: images.map(f => path.join(previewDir, f))
+  };
+}
+
 app.get('/api/preview/:filename', async (req, res) => {
   const pptxPath = path.join('/app/outputs', req.params.filename);
   if (!fs.existsSync(pptxPath)) {
     return res.status(404).json({ error: 'PPTX file not found' });
   }
 
-  const baseName = req.params.filename.replace(/\.pptx$/i, '');
-  const previewDir = path.join('/app/previews', baseName);
-
-  // Check if previews already exist
-  if (fs.existsSync(previewDir)) {
-    const images = fs.readdirSync(previewDir)
-      .filter(f => f.endsWith('.png'))
-      .sort()
-      .map(f => `/api/preview-image/${baseName}/${f}`);
-    return res.json({ slides: images, cached: true });
-  }
-
-  // Generate previews using LibreOffice
-  const { execSync } = require('child_process');
   try {
-    fs.mkdirSync(previewDir, { recursive: true });
-
-    // Convert PPTX to PDF first, then PDF to images
-    execSync(
-      `libreoffice --headless --convert-to pdf --outdir "${previewDir}" "${pptxPath}" 2>&1`,
-      { timeout: 60000, encoding: 'utf-8' }
-    );
-
-    const pdfFile = path.join(previewDir, baseName + '.pdf');
-    if (fs.existsSync(pdfFile)) {
-      // Convert PDF pages to PNG images using pdftoppm
-      execSync(
-        `pdftoppm -png -r 200 "${pdfFile}" "${path.join(previewDir, 'slide')}" 2>&1`,
-        { timeout: 60000, encoding: 'utf-8' }
-      );
-      // Clean up PDF
-      try { fs.unlinkSync(pdfFile); } catch (e) {}
-    }
-
-    const images = fs.readdirSync(previewDir)
-      .filter(f => f.endsWith('.png'))
-      .sort()
-      .map(f => `/api/preview-image/${baseName}/${f}`);
-
-    res.json({ slides: images, cached: false });
+    const result = ensurePreviewImages(req.params.filename);
+    res.json({ slides: result.apiPaths, cached: true });
   } catch (e) {
     console.error('[preview] Rendering failed:', e.message);
     res.status(500).json({ error: 'Preview rendering failed: ' + e.message.slice(0, 200) });
@@ -273,48 +277,17 @@ app.post('/api/qa', (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  const styleInfo = styles && styles.length > 0
-    ? `Selected styles: ${styles.join(', ')}`
-    : 'No specific style selected';
+  // Ensure preview images exist for visual QA
+  let previewPaths = [];
+  try {
+    const previews = ensurePreviewImages(filename);
+    previewPaths = previews.localPaths || [];
+    ClaudeRunner.sendSSE(res, { type: 'log', message: `[QA] Found ${previewPaths.length} slide preview images for visual analysis` });
+  } catch (e) {
+    ClaudeRunner.sendSSE(res, { type: 'log', message: `[QA] Warning: Could not generate preview images — visual QA will be limited: ${e.message}` });
+  }
 
-  const slideInfo = slides && slides.length > 0
-    ? slides.map(s => `- Slide ${s.slideNumber}: "${s.actionTitle}"`).join('\n')
-    : '';
-
-  const prompt = `You are a presentation QA reviewer. Analyze the PPTX file at /app/outputs/${filename}
-
-## Environment
-- python-pptx is installed. Use it to read the PPTX file.
-- Read each slide's content, layout, and formatting.
-
-## Slide Outline (expected)
-${slideInfo}
-
-## Style Context
-${styleInfo}
-
-## QA Checklist — check ALL of these:
-1. **Content completeness**: Does each slide have an action title, body content, and visual elements as described?
-2. **Text quality**: Are there any placeholder texts, lorem ipsum, or incomplete sentences?
-3. **Formatting consistency**: Font sizes, colors, alignment consistent across slides?
-4. **Slide count**: Does the number of slides match the outline?
-5. **Visual elements**: Are charts/diagrams/tables actually created or just described as text?
-6. **Readability**: Is text legible (not too small, not overflowing)?
-7. **Professional quality**: Would this pass in a C-level consulting presentation?
-
-## Output Format
-Return a structured QA report as JSON:
-{
-  "overallScore": 8,        // 1-10
-  "overallVerdict": "Good", // "Excellent" | "Good" | "Needs Work" | "Poor"
-  "issues": [
-    { "slide": 1, "severity": "warning", "issue": "Description of issue" }
-  ],
-  "strengths": ["List of things done well"],
-  "suggestions": ["List of improvement suggestions"]
-}
-
-Return ONLY the JSON, no other text.`;
+  const prompt = PromptBuilder.buildQAPrompt({ filename, slides, styles, previewPaths });
 
   ClaudeRunner.run(prompt, res, {
     onComplete: (output) => {
@@ -335,15 +308,24 @@ Return ONLY the JSON, no other text.`;
       }
 
       try {
-        const jsonMatch = textContent.match(/\{[\s\S]*?"overallScore"[\s\S]*?\}/);
-        if (jsonMatch) {
-          const qa = JSON.parse(jsonMatch[0]);
+        // Extract JSON from fenced code block or raw JSON
+        let jsonStr = null;
+        const fencedMatch = textContent.match(/```json\s*([\s\S]*?)```/);
+        if (fencedMatch) {
+          jsonStr = fencedMatch[1].trim();
+        } else {
+          const rawMatch = textContent.match(/\{[\s\S]*?"overallScore"[\s\S]*\}/);
+          if (rawMatch) jsonStr = rawMatch[0];
+        }
+
+        if (jsonStr) {
+          const qa = JSON.parse(jsonStr);
           ClaudeRunner.sendSSE(res, { type: 'qa_result', data: qa });
         } else {
-          ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', issues: [], strengths: [], suggestions: ['Could not parse QA result'], raw: textContent.slice(0, 500) } });
+          ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', slides: [], revisionPlan: '', _parseError: 'Could not find JSON in QA output', _raw: textContent.slice(0, 800) } });
         }
       } catch (e) {
-        ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', issues: [], strengths: [], suggestions: [e.message] } });
+        ClaudeRunner.sendSSE(res, { type: 'qa_result', data: { overallScore: 0, overallVerdict: 'Error', slides: [], revisionPlan: '', _parseError: e.message, _raw: textContent.slice(0, 800) } });
       }
       res.end();
     },

@@ -10,17 +10,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Initialization overlay -->
-  <div id="init-overlay" class="init-overlay">
-    <div class="init-content">
-      <div class="spinner" style="width:48px;height:48px;border-width:3px"></div>
-      <h2 class="logo">PPTX Creator</h2>
-      <p id="init-status">Checking Claude CLI connection...</p>
-      <button id="init-retry" class="btn btn-primary" hidden>Retry</button>
-      <a href="#" id="init-skip" style="display:none;margin-top:8px;font-size:12px;color:var(--text-muted)">Skip check</a>
-    </div>
-  </div>
-
   <div id="app">
     <!-- Sidebar open button (hidden when sidebar visible) -->
     <button id="sidebar-open" class="sidebar-open-btn" title="Open sidebar" hidden>
@@ -72,6 +61,14 @@
             </div>
           </div>
         </div>
+        <div class="sidebar-section" id="sidebar-update-section" hidden>
+          <label class="section-label">Update Presentation</label>
+          <textarea id="sidebar-update-input" class="content-textarea" rows="4" placeholder="Describe changes (e.g. change colors to blue, add more data to slide 3...)"></textarea>
+          <button id="btn-sidebar-update" class="btn btn-primary" style="width:100%;margin-top:8px">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Update
+          </button>
+        </div>
         <div class="sidebar-section">
           <label class="section-label">Generated Files</label>
           <div id="files-list" class="files-list"><div class="empty-state-small">No files yet</div></div>
@@ -90,11 +87,13 @@
 
     <!-- Main Area -->
     <main id="main" class="main">
-      <!-- Refine toggle button (top right) -->
-      <button id="refine-toggle" class="refine-toggle-btn" title="Open Refine panel">
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2v14M2 9h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Refine
-      </button>
+      <!-- CLI Warning Banner (shown if background check fails) -->
+      <div id="cli-warning" class="cli-warning" hidden>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 1L1 16h16L9 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 7v4M9 13v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span id="cli-warning-text">Claude CLI is not responding. Generation will not work.</span>
+        <button id="cli-warning-retry" class="btn btn-sm btn-primary">Retry</button>
+        <button id="cli-warning-dismiss" class="btn btn-sm" style="background:transparent;border:1px solid currentColor;color:inherit">&times;</button>
+      </div>
 
       <!-- Step Indicator (4 steps) -->
       <div class="step-indicator" id="step-indicator">
@@ -271,13 +270,53 @@
             <div class="slide-viewer-loading">Loading slide previews...</div>
           </div>
 
-          <!-- QA Button -->
-          <div class="qa-bar">
+          <!-- Revision Bar -->
+          <div class="revision-bar" id="revision-bar">
+            <textarea id="revision-global" class="content-textarea" rows="3" placeholder="General revision instructions (or use per-slide notes above)..."></textarea>
+            <div class="revision-bar-actions">
+              <span class="revision-bar-hint" id="revision-bar-hint"></span>
+              <button id="btn-revise" class="btn btn-primary btn-lg">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 15l3-1 9-9-2-2-9 9-1 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Revise Presentation
+              </button>
+            </div>
+          </div>
+
+          <!-- QA Wizard Section -->
+          <div class="qa-section" id="qa-section">
             <button id="btn-visual-qa" class="btn btn-secondary btn-lg" style="width:100%">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 11v-1m0-4v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="14" r="0.5" fill="currentColor"/></svg>
               Run Visual QA Check
             </button>
-            <div id="qa-result" class="qa-result" hidden></div>
+
+            <!-- QA Progress (shown during analysis) -->
+            <div id="qa-progress" class="qa-progress" hidden>
+              <div class="qa-progress-bar">
+                <div class="qa-progress-fill" id="qa-progress-fill"></div>
+              </div>
+              <span class="qa-progress-text" id="qa-progress-text">Analyzing presentation...</span>
+            </div>
+
+            <!-- QA Results (shown after analysis) -->
+            <div id="qa-results" hidden>
+              <!-- Overall summary row -->
+              <div id="qa-summary" class="qa-summary"></div>
+              <!-- Per-slide issue cards -->
+              <div id="qa-slide-cards" class="qa-slide-cards"></div>
+              <!-- Revision plan + Fix button (only if issues found) -->
+              <div id="qa-fix-section" class="qa-fix-section" hidden>
+                <label class="section-label">Revision Plan</label>
+                <p class="qa-fix-hint">Review and edit the plan, then click "Fix Issues" to apply changes.</p>
+                <textarea id="qa-revision-plan" class="content-textarea" rows="8"></textarea>
+                <div class="qa-fix-actions">
+                  <button id="btn-qa-dismiss" class="btn btn-secondary">Dismiss</button>
+                  <button id="btn-qa-fix" class="btn btn-primary btn-lg">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9l5 5L16 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Fix Issues
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <p class="output-hint" id="output-hint"></p>
@@ -287,20 +326,6 @@
       </div>
     </main>
 
-    <!-- Refine Sidebar (right) -->
-    <aside id="refine-sidebar" class="refine-sidebar collapsed">
-      <div class="refine-sidebar-header">
-        <h3>Refine</h3>
-        <button id="refine-sidebar-close" class="sidebar-toggle" title="Close">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 6l8 8M14 6l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="refine-sidebar-body">
-        <p class="refine-context" id="refine-context">Add instructions to refine the current output.</p>
-        <textarea id="refine-input" class="content-textarea" rows="6" placeholder="e.g. Focus more on implementation, add a SWOT slide..."></textarea>
-        <button id="refine-apply" class="btn btn-primary" style="width:100%;margin-top:12px;">Apply</button>
-      </div>
-    </aside>
   </div>
 
   <!-- Fullscreen Slide Modal -->

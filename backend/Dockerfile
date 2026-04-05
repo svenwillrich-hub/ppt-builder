@@ -19,7 +19,7 @@ COPY package.json ./
 RUN npm install --production
 
 # Pre-install pptxgenjs so Claude doesn't have to
-RUN npm install pptxgenjs
+RUN npm install pptxgenjs sharp
 
 # Make node_modules discoverable from any working directory (e.g. /tmp scripts)
 ENV NODE_PATH=/app/node_modules
