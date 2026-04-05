@@ -608,6 +608,7 @@ app.post('/api/enhance', (req, res) => {
 import sys, copy
 from pptx import Presentation
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+from lxml import etree
 
 main_prs = Presentation('/app/outputs/${filename}')
 new_prs = Presentation('${outputPath}')
@@ -617,25 +618,27 @@ if slide_idx < len(main_prs.slides) and len(new_prs.slides) > 0:
     old_slide = main_prs.slides[slide_idx]
     new_slide = new_prs.slides[0]
 
-    # Clear old slide shapes
-    for shape in list(old_slide.shapes):
-        sp = shape._element
-        sp.getparent().remove(sp)
+    # Completely replace the slide XML element
+    old_elem = old_slide._element
+    new_elem = new_slide._element
 
-    # Copy new shapes
-    for shape in new_slide.shapes:
-        el = copy.deepcopy(shape._element)
-        old_slide.shapes._spTree.append(el)
+    # Remove ALL children from old slide element
+    for child in list(old_elem):
+        old_elem.remove(child)
 
-    # Copy background
-    src_bg = new_slide.background._element
-    if src_bg is not None:
-        new_bg = copy.deepcopy(src_bg)
-        slide_elem = old_slide._element
-        existing_bg = slide_elem.find('{http://schemas.openxmlformats.org/presentationml/2006/main}bg')
-        if existing_bg is not None:
-            slide_elem.remove(existing_bg)
-        slide_elem.insert(0, new_bg)
+    # Copy ALL children from new slide element
+    for child in new_elem:
+        old_elem.append(copy.deepcopy(child))
+
+    # Copy image/media relationships from new slide
+    for rel in new_slide.part.rels.values():
+        if rel.reltype in [RT.IMAGE, RT.MEDIA]:
+            try:
+                # Copy the binary blob
+                target_part = rel.target_part
+                new_rel = old_slide.part.rels.get_or_add(rel.reltype, rel.target_ref)
+            except Exception:
+                pass
 
 main_prs.save('/app/outputs/${filename}')
 print("Slide ${slideNumber} replaced successfully")

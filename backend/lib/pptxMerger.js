@@ -88,39 +88,26 @@ for slide_file in slide_files[1:]:
         slide_layout = merged.slide_layouts[6] if len(merged.slide_layouts) > 6 else merged.slide_layouts[-1]
         new_slide = merged.slides.add_slide(slide_layout)
 
-        # Clear the blank slide's shapes
-        for shape in list(new_slide.shapes):
-            sp = shape._element
-            sp.getparent().remove(sp)
+        # Completely replace slide XML content
+        new_elem = new_slide._element
+        src_elem = src_slide._element
 
-        # Copy all shapes from source slide
-        for shape in src_slide.shapes:
-            el = copy.deepcopy(shape._element)
-            new_slide.shapes._spTree.append(el)
+        # Remove ALL children from the blank slide
+        for child in list(new_elem):
+            new_elem.remove(child)
 
-        # Copy slide background if set
-        src_bg = src_slide.background._element
-        if src_bg is not None:
-            new_bg = copy.deepcopy(src_bg)
-            # Replace the background element
-            slide_elem = new_slide._element
-            existing_bg = slide_elem.find('{http://schemas.openxmlformats.org/presentationml/2006/main}bg')
-            if existing_bg is not None:
-                slide_elem.remove(existing_bg)
-            # Insert bg as first child (before spTree)
-            slide_elem.insert(0, new_bg)
+        # Copy ALL children from source slide
+        for child in src_elem:
+            new_elem.append(copy.deepcopy(child))
 
-        # Copy images and other relationships
+        # Copy image/media relationships
         for rel in src_slide.part.rels.values():
             if rel.reltype in [RT.IMAGE, RT.MEDIA]:
                 try:
                     new_slide.part.rels.get_or_add(rel.reltype, rel.target_ref)
                 except Exception:
-                    # If relationship already exists or target is embedded, copy the blob
-                    try:
-                        new_slide.part.rels.get_or_add_ext_rel(rel.reltype, rel.target_ref)
-                    except Exception:
-                        pass
+                    pass
+
 
 # Set slide dimensions from the first source
 merged.slide_width = Presentation(slide_files[0]).slide_width
