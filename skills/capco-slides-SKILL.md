@@ -1,6 +1,6 @@
 ---
 name: capco-slides
-description: "Create professional presentations in the Capco consulting style — accent colors from the selected palette, Century Gothic typography, high-density content grids, and a structured section-based narrative. No section dividers — rhythm comes from consistent headers with numbered prefixes and accent underlines on every content slide. Visual components are always embedded in richer layouts with context strips. Colors are defined externally via the palette setting — do not hardcode color values. Creates widescreen (13.33\" × 7.5\") decks with structured content grids and professional information density."
+description: "Create professional presentations in the Capco consulting style — accent colors from the selected palette, Century Gothic typography, high-density content grids, and a structured section-based narrative. No section dividers — rhythm comes from consistent headers with accent underlines on every content slide. Titles must NOT use numbered prefixes (no "01.", "02." etc.). Visual components are always embedded in richer layouts with context strips. Colors are defined externally via the palette setting — do not hardcode color values. Creates widescreen (13.33\" × 7.5\") decks with structured content grids and professional information density."
 ---
 
 # Capco-Style PPTX Skill
@@ -10,12 +10,12 @@ description: "Create professional presentations in the Capco consulting style �
 **Corporate density meets clean structure.** Every slide communicates through structured grids, card layouts, and categorized information — not bullet walls. The Capco style balances high information density with visual clarity through consistent headers, embedded visual components, and key-message anchors on every slide.
 
 **Core principles:**
-- **Consistent header on EVERY content slide:** Numbered section prefix + pipe separator + accent underline + description line — this is the #1 structural rule
+- **Consistent header on EVERY content slide:** Title + pipe separator + accent underline + description line — this is the #1 structural rule
 - Content slides use white/light backgrounds with structured multi-column grids
 - The primary accent color (from the selected palette) is used for bars, highlights, labels, and category headers
 - Century Gothic is the dominant typeface throughout — clean, geometric, modern
 - High density: 6-12 data points per content slide, organized in card grids
-- Numbered section prefixes (01., 02., 03.) create navigational hierarchy
+- Slide titles do NOT use numbered prefixes — no "01.", "02." etc.
 - **NO section dividers** — they waste space and break content flow. Rhythm comes from the consistent header structure. The title slide uses a light background per the 2026 Capco template
 - **Visual components are embedded, not standalone** — when using visual components (pyramids, chevrons, quadrants, etc.), always surround them with contextual elements: info grids, source cards, or actor chains. A visual component should never be the ONLY element on a slide
 
@@ -25,16 +25,13 @@ description: "Create professional presentations in the Capco consulting style �
 
 | Task | Action |
 |------|--------|
-| Create Capco-style deck | Read this file fully, then use PptxGenJS |
-| PptxGenJS API | Read `/mnt/skills/public/pptx/pptxgenjs.md` |
-| Visual components | Read `/mnt/skills/user/capco-visual-components/SKILL.md` → embed with Pattern 12 |
-| Visual QA | Read `/mnt/skills/public/pptx/SKILL.md` → QA section |
-| Icon rendering | Read `/mnt/skills/public/pptx/pptxgenjs.md` → Icons section |
+| Create Capco-style deck | Follow this skill file fully, then use PptxGenJS |
+| Visual components | See capco-visual-components skill (included in prompt) → embed with Pattern 12 |
 
-**IMPORTANT:** Always read `/mnt/skills/public/pptx/pptxgenjs.md` before writing any code. It contains the full PptxGenJS API reference, icon rendering setup, and critical pitfalls to avoid.
+**IMPORTANT:** All skill files are already included in this prompt. Do NOT attempt to read files from `/mnt/skills/` — that path does not exist. PptxGenJS is pre-installed at `/app/node_modules/pptxgenjs`.
 
 **THREE GOLDEN RULES (always apply):**
-1. **Header on EVERY content slide** — `addSlideHeader()` with numbered prefix + pipe separator + accent line + description
+1. **Header on EVERY content slide** — `addSlideHeader()` with title + pipe separator + accent line + description
 2. **Visual components embedded, not standalone** — Always surround with context cards, info grids, or source cards (Pattern 12)
 
 ---
@@ -109,7 +106,7 @@ const categories = {
 
 | Element | Size | Weight | Color |
 |---------|------|--------|-------|
-| Slide title (numbered) | 26pt | Bold | textDark |
+| Slide title | 26pt | Bold | textDark |
 | Slide title pipe suffix | 26pt | Regular | textDark |
 | Subtitle / description | 16pt | Regular | textBody |
 | Card/column header | 12-14pt | Bold | textDark or textLight |
@@ -117,13 +114,12 @@ const categories = {
 | Caption / source | 10pt | Regular | textMuted |
 | Big number callout | 51pt | Bold | primary |
 | KPI label | 12pt | Regular | textMuted |
-| Section number prefix | 26pt | Bold | textDark |
 
 ### Text Rules
 - **Left-align** all body text
 - **Center** only: big number callouts
-- Section titles use format: `"01. TOPIC NAME"` with bold number prefix
-- Sub-section titles use pipe separator: `"03. DATA STRATEGY | OUR KEY OFFERINGS"`
+- Section titles use format: `"TOPIC NAME"` (no numbered prefix)
+- Sub-section titles use pipe separator: `"DATA STRATEGY | OUR KEY OFFERINGS"`
 - Maximum **4 lines** of body text per content block
 - Prefer **sentence fragments** and key phrases over full sentences
 - Use **UPPERCASE** for section names and category labels
@@ -338,7 +334,7 @@ function createAgendaSlide(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  01. SLIDE TITLE                                        │
+│  SLIDE TITLE                                        │
 │  ──────────────── (thin accent line)                      │
 │  Bold tagline / key statement                           │
 │                                                         │
@@ -355,10 +351,9 @@ function createIntroSlide(pres, opts) {
   const slide = pres.addSlide();
   slide.background = { color: palette.lightBg };
 
-  // Section number + title
+  // Title
   slide.addText([
-    { text: opts.sectionNum + ". ", options: { bold: true, color: palette.textDark } },
-    { text: opts.title, options: { bold: false, color: palette.textDark } },
+    { text: opts.title, options: { bold: true, color: palette.textDark } },
   ], {
     x: 0.6, y: 0.4, w: 10, h: 0.6,
     fontSize: 26, fontFace: "Century Gothic", valign: "bottom", margin: 0,
@@ -397,7 +392,7 @@ function createIntroSlide(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  03. TOPIC | EXECUTIVE SUMMARY                          │
+│  TOPIC | EXECUTIVE SUMMARY                          │
 │  ──────────────────────────────────────                 │
 │  Subtitle description text                              │
 │  ┌──────────┐ │ ┌─────────┐┌─────────┐┌─────────┐     │
@@ -421,7 +416,7 @@ function createExecSummarySlide(pres, opts) {
 
   // Title with pipe separator
   slide.addText([
-    { text: opts.sectionNum + ". " + opts.title + " ", options: { bold: true } },
+    { text: opts.title + " ", options: { bold: true } },
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
@@ -523,7 +518,7 @@ function createExecSummarySlide(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  03. TOPIC | OUR KEY OFFERINGS                          │
+│  TOPIC | OUR KEY OFFERINGS                          │
 │  ──────────────────────────────────────                 │
 │  Description text                                       │
 │  ┌────────┐┌────────┐┌────────┐┌────────┐┌────────┐   │
@@ -545,7 +540,7 @@ function createOfferingsGrid(pres, opts) {
 
   // Title
   slide.addText([
-    { text: opts.sectionNum + ". " + opts.title + " ", options: { bold: true } },
+    { text: opts.title + " ", options: { bold: true } },
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
@@ -628,7 +623,7 @@ function createOfferingsGrid(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  02. DATA PRACTICE | OVERVIEW                           │
+│  DATA PRACTICE | OVERVIEW                           │
 │  ──────────────────────────────────────                 │
 │  800+ Practitioners | 5 continents | 100+ clients       │
 │  ┌──────────┐┌──────────┐┌──────────┐┌──────────┐     │
@@ -650,7 +645,7 @@ function createFourColumnOverview(pres, opts) {
 
   // Title
   slide.addText([
-    { text: opts.sectionNum + ". " + opts.title + " ", options: { bold: true } },
+    { text: opts.title + " ", options: { bold: true } },
     { text: "| " + opts.subtitle, options: { bold: false } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
@@ -741,7 +736,7 @@ function createFourColumnOverview(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  01. SLIDE TITLE                                        │
+│  SLIDE TITLE                                        │
 │  ──────────────────────────────────────                 │
 │        │ Cat 1  │ Cat 2  │ Cat 3  │ Cat 4  │ Cat 5    │
 │  ──────┼────────┼────────┼────────┼────────┼──────    │
@@ -767,7 +762,7 @@ function createServicesMatrix(pres, opts) {
 
   // Title
   slide.addText([
-    { text: opts.sectionNum + ". ", options: { bold: true } },
+    { text: opts.title + " ", options: { bold: true } },
     { text: opts.title, options: { bold: true } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
@@ -869,7 +864,7 @@ function createServicesMatrix(pres, opts) {
 **Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  01. SLIDE TITLE                                        │
+│  SLIDE TITLE                                        │
 │  ──────────────────────────────────────                 │
 │                                                         │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
@@ -889,7 +884,7 @@ function createKPISlide(pres, opts) {
 
   // Title
   slide.addText([
-    { text: opts.sectionNum + ". ", options: { bold: true } },
+    { text: opts.title + " ", options: { bold: true } },
     { text: opts.title, options: { bold: true } },
   ], {
     x: 0.6, y: 0.3, w: 12, h: 0.5,
@@ -955,7 +950,7 @@ function createKPISlide(pres, opts) {
 ```
 Strategy A: Component + Context Strip
 ┌─────────────────────────────────────────────────────────┐
-│  04. TITLE | SUBTITLE                                    │
+│  TITLE | SUBTITLE                                    │
 │  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────────────────────────────────────────────────┐  │
@@ -968,7 +963,7 @@ Strategy A: Component + Context Strip
 
 Strategy B: Source Cards Above + Component Below
 ┌─────────────────────────────────────────────────────────┐
-│  03. TITLE | SUBTITLE                                    │
+│  TITLE | SUBTITLE                                    │
 │  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────┐┌────────┐┌────────┐  (source/context cards) │
@@ -981,7 +976,7 @@ Strategy B: Source Cards Above + Component Below
 
 Strategy C: Component + Section Divider Line + Second Component/Grid
 ┌─────────────────────────────────────────────────────────┐
-│  04. TITLE | SUBTITLE                                    │
+│  TITLE | SUBTITLE                                    │
 │  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌────────────────────────────────────────────────────┐  │
@@ -996,7 +991,7 @@ Strategy C: Component + Section Divider Line + Second Component/Grid
 
 Strategy D: Big Number + Component Side-by-Side
 ┌─────────────────────────────────────────────────────────┐
-│  01. TITLE | SUBTITLE                                    │
+│  TITLE | SUBTITLE                                    │
 │  ──────────────── (accent line)                           │
 │  Description text                                        │
 │  ┌──────────┐  ┌──────────────────────────────────────┐  │
@@ -1048,7 +1043,7 @@ function addMidSlideDivider(slide, pres, y, title, subtitle) {
 Every content slide follows this vertical structure:
 ```
 HEADER ZONE (y: 0.3-1.4)
-  → Section number + title + pipe separator
+  → Title + pipe separator
   → Accent underline
   → Description line
 
@@ -1059,7 +1054,7 @@ CONTENT ZONE (y: 1.4-6.9)
 
 ### Consolidation Triggers
 Merge two slides into one when:
-- Both slides share the same section number
+- Both slides share the same section topic
 - One slide has a visual component and the other has a list/grid
 - Both slides are under 60% of vertical space used
 - The two topics are closely related (e.g., roles + processes, framework + implementation)
@@ -1126,7 +1121,7 @@ Recommended slide order (NO section dividers — rhythm comes from consistent he
 8. Challenges Overview (Pattern 12: quadrants + contextual detail)
 9. Detail Slide (Pattern 12: source cards + progress bars/dual panel)
 10. Combined Slide (Pattern 12 Strategy C: component + divider + component)
-11. Recommendations (numbered agenda)
+11. Recommendations (agenda)
 12. Landscape/Matrix (Pattern 8 or Pattern 6 deep cards)
 13. Conclusion (6-insight grid + emerging challenges strip)
 ```
@@ -1134,7 +1129,7 @@ Recommended slide order (NO section dividers — rhythm comes from consistent he
 **Key differences from traditional consulting decks:**
 - NO section dividers between sections (they waste slides and break flow)
 - NO dark background slides — all slides use light/white backgrounds for a clean, modern look
-- Section transitions are signaled by the numbered prefix changing (01→02→03)
+- Section transitions are signaled by the title topic changing
 - Visual components are always embedded in richer layouts (Pattern 12)
 - Prefer fewer, denser slides over many thin slides
 
@@ -1151,8 +1146,8 @@ Recommended slide order (NO section dividers — rhythm comes from consistent he
 7. **No rounded rectangles for cards** — Use `RECTANGLE` (square corners match the Capco aesthetic)
 8. **No excessive shadows** — Keep it clean and flat; subtle shadows only if needed
 9. **No gradients** — Use solid fills throughout
-10. **No dark background slides** — Do NOT create any dark background slides (no section dividers, no dark closing slides). All slides use white/light backgrounds. Section transitions are signaled by the numbered prefix changing (01→02→03)
-11. **No missing section numbers** — Every slide title must start with "XX." section prefix
+10. **No dark background slides** — Do NOT create any dark background slides (no section dividers, no dark closing slides). All slides use white/light backgrounds
+11. **No numbered prefixes** — Slide titles must NOT start with "01.", "02." or any numbered prefix
 12. **No missing pipe separators** — Sub-topics use "| SUBTITLE" format after the main title
 13. **NEVER use `#` prefix in hex colors** — PptxGenJS pitfall
 14. **NEVER reuse option objects** — Create fresh objects for each `addShape`/`addText` call
@@ -1219,10 +1214,10 @@ function setupMasters(pres) {
 }
 
 // --- Content Slide Header Helper ---
-function addSlideHeader(slide, pres, sectionNum, title, subtitle, description) {
+function addSlideHeader(slide, pres, title, subtitle, description) {
   // Title with pipe separator
   const titleParts = [];
-  titleParts.push({ text: sectionNum + ". " + title + " ", options: { bold: true, color: palette.textDark } });
+  titleParts.push({ text: title + " ", options: { bold: true, color: palette.textDark } });
   if (subtitle) {
     titleParts.push({ text: "| " + subtitle, options: { bold: false, color: palette.textDark } });
   }
@@ -1313,7 +1308,7 @@ After generating the deck, verify:
 - [ ] **LAYOUT_WIDE used**: Slides are 13.33" × 7.5" (not 10" × 5.625")
 - [ ] **Century Gothic everywhere**: All text uses Century Gothic (or Arial as body fallback)
 - [ ] **Primary accent line on every content slide**: Horizontal line at y ≈ 0.9" using palette.primary
-- [ ] **Section numbers present**: All titles start with "XX." prefix
+- [ ] **No numbered prefixes**: Titles must NOT start with "01.", "02." etc.
 - [ ] **No dark slides**: All slides use white/light backgrounds — no dark section dividers or closing slides
 - [ ] **Visual components embedded**: No visual component (pyramid, chevron, quadrant, etc.) is the sole element on a slide — always paired with context cards, info grids, or source cards
 - [ ] **No text overlaps**: Cards and text boxes have proper padding
@@ -1324,7 +1319,7 @@ After generating the deck, verify:
 - [ ] **No `#` in hex colors**: PptxGenJS pitfall check
 - [ ] **No shared option objects**: Each addShape/addText uses fresh style objects
 
-Follow the full Visual QA process from `/mnt/skills/public/pptx/SKILL.md`:
+Follow this Visual QA process:
 1. Convert to images: `soffice.py --headless --convert-to pdf` → `pdftoppm`
 2. Inspect every slide image
 3. Fix issues and re-verify

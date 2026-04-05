@@ -12,8 +12,8 @@ Dieser Skill ist eine **Komponentenbibliothek**, kein eigenständiger Deck-Build
 ## Zusammenspiel mit capco-slides
 
 **Workflow:**
-1. Lies `/mnt/skills/user/capco-slides/SKILL.md` für das Deck-Gerüst (Palette, Typografie, Slide-Master)
-2. Lies `/mnt/skills/public/pptx/pptxgenjs.md` für die PptxGenJS-API
+1. Folge dem capco-slides Skill für das Deck-Gerüst (Palette, Typografie, Slide-Master) — bereits im Prompt enthalten
+2. PptxGenJS ist vorinstalliert unter `/app/node_modules/pptxgenjs` — NICHT von `/mnt/skills/` lesen
 3. Lies diese Datei für die visuellen Komponenten
 4. Erstelle Slides mit `capco-slides`-Patterns (Title, Section Divider, Content-Slide-Header)
 5. Füge visuelle Komponenten aus dieser Bibliothek in den Content-Bereich ein
@@ -22,7 +22,7 @@ Dieser Skill ist eine **Komponentenbibliothek**, kein eigenständiger Deck-Build
 ```javascript
 // 1. Erstelle Slide mit capco-slides Pattern
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "03", "DATA INSIGHTS", "KPI OVERVIEW", "Key performance metrics for Q3");
 
 // 2. Füge visuelle Komponente aus dieser Bibliothek ein
@@ -39,23 +39,21 @@ addDonutKPIGrid(slide, pres, {
 
 ## Referenz-Farbschema
 
-Defaults aus der Graphic_forms.pptx Vorlage. Alle Funktionen akzeptieren `opts.primaryColor`, `opts.secondaryColor` etc. als Override.
+**IMPORTANT: Colors are provided externally via the Color Palette setting.** Use the palette colors from the `## Color & Typography Customization` section of the prompt. All functions accept `opts.primaryColor`, `opts.secondaryColor` etc. as Override.
 
 ```javascript
+// Map externally provided palette colors to these semantic roles:
 const VC_COLORS = {
-  primary:      "00868C",  // Capco Teal
-  primaryLight: "01B3BB",  // Lighter Teal
-  dark:         "3F3F3F",  // Dark accent / text
-  midGrey:      "7F7F7F",  // Mid grey
-  lightTeal1:   "7CB7BA",  // Light teal variant
-  lightTeal2:   "A8CFD1",  // Lighter teal
-  lightTeal3:   "9DC9CB",  // Soft teal
-  paleGrey:     "F2F2F2",  // Card backgrounds
-  white:        "FFFFFF",
-  black:        "000000",
-  textBody:     "3F3F3F",
-  textMuted:    "5B5D60",
-  border:       "D8D8D8",
+  primary:      palette.primary,       // Color 1 from palette
+  primaryLight: palette.primaryLight,  // Color 1, lightened ~20%
+  dark:         palette.textBody,      // Dark accent / text
+  midGrey:      palette.midGrey,             // Mid grey
+  paleGrey:     palette.lightGray,     // Card backgrounds
+  white:        palette.textLight,
+  black:        palette.textDark,
+  textBody:     palette.textBody,
+  textMuted:    palette.textMuted,
+  border:       palette.border,
 };
 ```
 
@@ -94,10 +92,10 @@ Donut-Ring mit Prozentzahl in der Mitte, darunter Label + Detail-Text. Anordnung
  * @param {number} opts.w - Total width of grid area
  * @param {number} opts.h - Total height of grid area
  * @param {Array} opts.items - Array of { value: 0-100, label: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"] - Filled arc color
- * @param {string} [opts.trackColor="D8D8D8"] - Unfilled arc color
+ * @param {string} [opts.primaryColor=palette.primary] - Filled arc color
+ * @param {string} [opts.trackColor=palette.border] - Unfilled arc color
  * @param {string} [opts.labelColor="000000"] - Label text color
- * @param {string} [opts.detailColor="5B5D60"] - Detail text color
+ * @param {string} [opts.detailColor=palette.textMuted] - Detail text color
  * @param {number} [opts.cols] - Override column count (auto-calculated if omitted)
  */
 function addDonutKPIGrid(slide, pres, opts) {
@@ -105,10 +103,10 @@ function addDonutKPIGrid(slide, pres, opts) {
   const n = items.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const track = opts.trackColor || "D8D8D8";
+  const primary = opts.primaryColor || palette.primary;
+  const track = opts.trackColor || palette.border;
   const labelColor = opts.labelColor || "000000";
-  const detailColor = opts.detailColor || "5B5D60";
+  const detailColor = opts.detailColor || palette.textMuted;
 
   // Auto grid: 1-2 items → 1 row; 3-4 → 2×2; 5-6 → 2×3; 7-8 → 2×4
   const cols = opts.cols || (n <= 2 ? n : n <= 4 ? 2 : n <= 6 ? 3 : 4);
@@ -179,7 +177,7 @@ function addDonutKPIGrid(slide, pres, opts) {
 
 ### 1.2 Horizontale Progress-Bars mit Prozentanzeige
 
-5 (oder variable Anzahl) horizontale Balken übereinander mit Teal-Füllung, grauem Track und Prozentwert rechts.
+5 (oder variable Anzahl) horizontale Balken übereinander mit Primary-Füllung, grauem Track und Prozentwert rechts.
 
 **Referenz-Slide:** 3
 
@@ -194,8 +192,8 @@ function addDonutKPIGrid(slide, pres, opts) {
  * @param {number} opts.w - Total width
  * @param {number} opts.h - Total height
  * @param {Array} opts.items - Array of { label: string, value: 0-100, detail?: string }
- * @param {string} [opts.primaryColor="00868C"]
- * @param {string} [opts.trackColor="D8D8D8"]
+ * @param {string} [opts.primaryColor=palette.primary]
+ * @param {string} [opts.trackColor=palette.border]
  * @param {number} [opts.barHeight=0.28] - Height of each bar in inches
  */
 function addProgressBars(slide, pres, opts) {
@@ -203,8 +201,8 @@ function addProgressBars(slide, pres, opts) {
   const n = items.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const trackColor = opts.trackColor || "D8D8D8";
+  const primary = opts.primaryColor || palette.primary;
+  const trackColor = opts.trackColor || palette.border;
   const barH = opts.barHeight || 0.28;
   const labelW = opts.w * 0.3;   // 30% for label area
   const percentW = 0.6;          // fixed width for percentage text
@@ -218,7 +216,7 @@ function addProgressBars(slide, pres, opts) {
     // Label (left)
     slide.addText(item.label || "", {
       x: opts.x, y: rowY, w: labelW, h: rowH * 0.5,
-      fontSize: 10, fontFace: "Century Gothic", color: "000000",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "bottom", margin: 0,
     });
 
@@ -226,7 +224,7 @@ function addProgressBars(slide, pres, opts) {
     if (item.detail) {
       slide.addText(item.detail, {
         x: opts.x, y: rowY + rowH * 0.5, w: labelW, h: rowH * 0.45,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         valign: "top", margin: 0,
       });
     }
@@ -276,16 +274,16 @@ Mittig "VS", links Option 01 Balken, rechts Option 02 Balken, dazwischen Aspect-
  * @param {string} opts.leftLabel - "Option 01"
  * @param {string} opts.rightLabel - "Option 02"
  * @param {Array} opts.aspects - Array of { name: string, leftValue: 0-100, rightValue: 0-100 }
- * @param {string} [opts.leftColor="00868C"]
- * @param {string} [opts.rightColor="7F7F7F"]
+ * @param {string} [opts.leftColor=palette.primary]
+ * @param {string} [opts.rightColor=palette.midGrey]
  */
 function addVSComparison(slide, pres, opts) {
   const aspects = opts.aspects || [];
   const n = aspects.length;
   if (n === 0) return;
 
-  const leftColor = opts.leftColor || "00868C";
-  const rightColor = opts.rightColor || "7F7F7F";
+  const leftColor = opts.leftColor || palette.primary;
+  const rightColor = opts.rightColor || palette.midGrey;
   const centerW = 1.4;  // width for VS + aspect labels
   const halfW = (opts.w - centerW) / 2;
   const centerX = opts.x + halfW;
@@ -295,11 +293,11 @@ function addVSComparison(slide, pres, opts) {
   const vsCX = centerX + centerW / 2;
   slide.addShape(pres.shapes.OVAL, {
     x: vsCX - 0.5, y: vsY, w: 1.0, h: 1.0,
-    fill: { color: "000000" },
+    fill: { color: palette.textDark },
   });
   slide.addText("VS", {
     x: vsCX - 0.5, y: vsY, w: 1.0, h: 1.0,
-    fontSize: 22, fontFace: "Century Gothic", color: "FFFFFF",
+    fontSize: 22, fontFace: "Century Gothic", color: palette.textLight,
     bold: true, align: "center", valign: "middle", margin: 0,
   });
 
@@ -329,12 +327,12 @@ function addVSComparison(slide, pres, opts) {
     slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
       x: centerX + 0.05, y: ry + (rowH - 0.35) / 2,
       w: centerW - 0.1, h: 0.35,
-      fill: { color: "000000" }, rectRadius: 0.04,
+      fill: { color: palette.textDark }, rectRadius: 0.04,
     });
     slide.addText(asp.name || "", {
       x: centerX + 0.05, y: ry + (rowH - 0.35) / 2,
       w: centerW - 0.1, h: 0.35,
-      fontSize: 8, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -352,7 +350,7 @@ function addVSComparison(slide, pres, opts) {
     });
     slide.addText(lVal + "%", {
       x: centerX - lBarW - 0.05 - 0.45, y: barY - 0.05, w: 0.45, h: barH + 0.1,
-      fontSize: 7, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -370,7 +368,7 @@ function addVSComparison(slide, pres, opts) {
     });
     slide.addText(rVal + "%", {
       x: centerX + centerW + 0.05 + rBarW, y: barY - 0.05, w: 0.45, h: barH + 0.1,
-      fontSize: 7, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
   });
@@ -400,7 +398,7 @@ function addBigNumberCallouts(slide, pres, opts) {
   const n = items.length;
   if (n === 0) return;
 
-  const defaultColors = ["00868C", "3F3F3F", "7F7F7F", "01B3BB", "5B5D60"];
+  const defaultColors = [palette.primary, palette.textBody, palette.midGrey, palette.primaryLight, palette.textMuted];
   const colors = opts.colors || defaultColors.slice(0, n);
   const gap = 0.25;
   const colW = (opts.w - gap * (n - 1)) / n;
@@ -420,7 +418,7 @@ function addBigNumberCallouts(slide, pres, opts) {
     });
     slide.addText(item.label || "", {
       x: cx + colW * 0.15, y: opts.y, w: colW * 0.7, h: tagH,
-      fontSize: 9, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -440,12 +438,12 @@ function addBigNumberCallouts(slide, pres, opts) {
       if (di % 2 === 0) {
         slide.addShape(pres.shapes.RECTANGLE, {
           x: cx, y: dy, w: colW, h: detailRowH,
-          fill: { color: "F2F2F2" },
+          fill: { color: palette.lightGray },
         });
       }
       slide.addText(d, {
         x: cx + 0.1, y: dy, w: colW - 0.2, h: detailRowH,
-        fontSize: 8, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textBody,
         valign: "middle", margin: 0,
       });
     });
@@ -487,14 +485,14 @@ function addAuditDashboard(slide, pres, opts) {
     // Panel border
     slide.addShape(pres.shapes.RECTANGLE, {
       x: px, y: py, w: cellW, h: cellH,
-      fill: { color: "FFFFFF" },
-      line: { color: "D8D8D8", width: 0.75 },
+      fill: { color: palette.textLight },
+      line: { color: palette.border, width: 0.75 },
     });
 
     // Panel title
     slide.addText(panel.title || "", {
       x: px + 0.1, y: py + 0.05, w: cellW - 0.2, h: 0.3,
-      fontSize: 9, fontFace: "Century Gothic", color: "000000",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "middle", margin: 0,
     });
 
@@ -506,7 +504,7 @@ function addAuditDashboard(slide, pres, opts) {
       x: px + 0.1, y: py + 0.4, w: cellW - 0.2, h: cellH - 0.55,
       showLegend: true, legendPos: "b", legendFontSize: 7,
       showTitle: false,
-      chartColors: panel.colors || ["00868C", "01B3BB", "7CB7BA", "D8D8D8", "3F3F3F"],
+      chartColors: panel.colors || [palette.primary, palette.primaryLight, palette.primaryPale, palette.border, palette.textBody],
       holeSize: panel.type === "bar" ? undefined : 65,
       showPercent: panel.type !== "bar",
       showValue: panel.type === "bar",
@@ -551,16 +549,16 @@ function addAuditDashboard(slide, pres, opts) {
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.steps - Array of { label: string, milestone: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"]
- * @param {string} [opts.secondaryColor="3F3F3F"]
+ * @param {string} [opts.primaryColor=palette.primary]
+ * @param {string} [opts.secondaryColor=palette.textBody]
  */
 function addStairSteps(slide, pres, opts) {
   const steps = opts.steps || [];
   const n = steps.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const secondary = opts.secondaryColor || "3F3F3F";
+  const primary = opts.primaryColor || palette.primary;
+  const secondary = opts.secondaryColor || palette.textBody;
   const stepW = (opts.w - 0.3) / n;
   const maxStepH = opts.h * 0.35;
   const minStepH = opts.h * 0.18;
@@ -581,12 +579,12 @@ function addStairSteps(slide, pres, opts) {
     // Step label inside arrow
     slide.addText("STEP " + (i + 1), {
       x: sx + 0.15, y: sy + 0.05, w: stepW - 0.3, h: stepH * 0.4,
-      fontSize: 8, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
     slide.addText(step.label || "", {
       x: sx + 0.15, y: sy + stepH * 0.4, w: stepW - 0.3, h: stepH * 0.55,
-      fontSize: 7, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       align: "center", valign: "top", margin: 0,
     });
 
@@ -594,13 +592,13 @@ function addStairSteps(slide, pres, opts) {
     const detailY = baseY + 0.15;
     slide.addText(step.milestone || "", {
       x: sx, y: detailY, w: stepW, h: 0.3,
-      fontSize: 9, fontFace: "Century Gothic", color: "000000",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: "center", valign: "top", margin: 0,
     });
     if (step.detail) {
       slide.addText(step.detail, {
         x: sx, y: detailY + 0.3, w: stepW, h: 0.6,
-        fontSize: 7, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textMuted,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -624,14 +622,14 @@ function addStairSteps(slide, pres, opts) {
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.items - Array of { title: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addNumberedAgenda(slide, pres, opts) {
   const items = opts.items || [];
   const n = items.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const cols = 2;
   const perCol = Math.ceil(n / cols);
   const colW = (opts.w - 0.5) / cols;
@@ -655,7 +653,7 @@ function addNumberedAgenda(slide, pres, opts) {
     // Title
     slide.addText(item.title || "", {
       x: ix + numW + 0.05, y: iy, w: colW - numW - 0.05, h: 0.35,
-      fontSize: 11, fontFace: "Century Gothic", color: "000000",
+      fontSize: 11, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "top", margin: 0,
     });
 
@@ -663,7 +661,7 @@ function addNumberedAgenda(slide, pres, opts) {
     if (item.detail) {
       slide.addText(item.detail, {
         x: ix + numW + 0.05, y: iy + 0.35, w: colW - numW - 0.05, h: rowH * 0.9 - 0.4,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         valign: "top", margin: 0,
       });
     }
@@ -672,7 +670,7 @@ function addNumberedAgenda(slide, pres, opts) {
     if (rowIdx < perCol - 1 && i < n - 1) {
       slide.addShape(pres.shapes.LINE, {
         x: ix, y: iy + rowH - 0.05, w: colW, h: 0,
-        line: { color: "D8D8D8", width: 0.5 },
+        line: { color: palette.border, width: 0.5 },
       });
     }
   });
@@ -683,7 +681,7 @@ function addNumberedAgenda(slide, pres, opts) {
 
 ### 2.6 Chevron-Prozess-Kette mit Details
 
-5 Chevron/homePlate-Shapes horizontal verbunden, Teal/Grau alternierend, mit Details darunter.
+5 Chevron/homePlate-Shapes horizontal verbunden, Primary/Grau alternierend, mit Details darunter.
 
 **Referenz-Slide:** 8
 
@@ -695,8 +693,8 @@ function addNumberedAgenda(slide, pres, opts) {
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.steps - Array of { title: string, details: [string, string, string] }
- * @param {string} [opts.primaryColor="00868C"]
- * @param {string} [opts.secondaryColor="3F3F3F"]
+ * @param {string} [opts.primaryColor=palette.primary]
+ * @param {string} [opts.secondaryColor=palette.textBody]
  * @param {string} [opts.additionalDetails] - Text for bottom row
  */
 function addChevronProcess(slide, pres, opts) {
@@ -704,8 +702,8 @@ function addChevronProcess(slide, pres, opts) {
   const n = steps.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const secondary = opts.secondaryColor || "3F3F3F";
+  const primary = opts.primaryColor || palette.primary;
+  const secondary = opts.secondaryColor || palette.textBody;
   const chevronH = 0.65;
   const chevGap = 0.04;
   const chevW = (opts.w - chevGap * (n - 1)) / n;
@@ -724,7 +722,7 @@ function addChevronProcess(slide, pres, opts) {
     // Title inside chevron
     slide.addText(step.title || "", {
       x: sx + chevW * 0.15, y: opts.y, w: chevW * 0.7, h: chevronH,
-      fontSize: 8, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -735,7 +733,7 @@ function addChevronProcess(slide, pres, opts) {
       const dy = opts.y + chevronH + 0.2 + di * detailRowH;
       slide.addText(d, {
         x: sx + 0.05, y: dy, w: chevW - 0.1, h: detailRowH,
-        fontSize: 7, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textBody,
         valign: "top", margin: 0,
       });
     });
@@ -746,11 +744,11 @@ function addChevronProcess(slide, pres, opts) {
     const adY = opts.y + opts.h - 0.35;
     slide.addShape(pres.shapes.RECTANGLE, {
       x: opts.x, y: adY, w: opts.w, h: 0.3,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
     slide.addText(opts.additionalDetails, {
       x: opts.x + 0.1, y: adY, w: opts.w - 0.2, h: 0.3,
-      fontSize: 8, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textBody,
       valign: "middle", margin: 0,
     });
   }
@@ -774,14 +772,14 @@ Halbbogen links mit Knotenpunkten, rechts 5 nummerierte Schritte.
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.steps - Array of { title: string, detail: string }
  * @param {string} [opts.arcLabel="Agile\nMethods"]
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addAgileArc(slide, pres, opts) {
   const steps = opts.steps || [];
   const n = steps.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const arcAreaW = opts.w * 0.35;
   const stepsAreaX = opts.x + arcAreaW + 0.2;
   const stepsAreaW = opts.w - arcAreaW - 0.2;
@@ -798,7 +796,7 @@ function addAgileArc(slide, pres, opts) {
     const dotX = arcCX - Math.cos(angle) * arcR;
     const dotY = arcCY - Math.sin(angle) * arcR + arcR * 0.5;
     const dotSize = 0.3;
-    const color = i % 2 === 0 ? primary : "7F7F7F";
+    const color = i % 2 === 0 ? primary : palette.midGrey;
 
     // Dot on arc
     slide.addShape(pres.shapes.OVAL, {
@@ -811,7 +809,7 @@ function addAgileArc(slide, pres, opts) {
     slide.addShape(pres.shapes.LINE, {
       x: dotX + dotSize / 2, y: dotY,
       w: stepsAreaX - dotX - dotSize / 2, h: stepY - dotY,
-      line: { color: "D8D8D8", width: 0.5, dashType: "dash" },
+      line: { color: palette.border, width: 0.5, dashType: "dash" },
     });
   }
 
@@ -826,7 +824,7 @@ function addAgileArc(slide, pres, opts) {
   const stepRowH = opts.h / n;
   steps.forEach((step, i) => {
     const sy = opts.y + i * stepRowH;
-    const color = i % 2 === 0 ? primary : "7F7F7F";
+    const color = i % 2 === 0 ? primary : palette.midGrey;
     const circleSize = 0.38;
 
     // Number circle
@@ -836,14 +834,14 @@ function addAgileArc(slide, pres, opts) {
     });
     slide.addText(String(i + 1), {
       x: stepsAreaX, y: sy + (stepRowH - circleSize) / 2, w: circleSize, h: circleSize,
-      fontSize: 12, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
     // Title
     slide.addText(step.title || "", {
       x: stepsAreaX + circleSize + 0.15, y: sy + 0.05, w: stepsAreaW - circleSize - 0.3, h: stepRowH * 0.45,
-      fontSize: 10, fontFace: "Century Gothic", color: "000000",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "bottom", margin: 0,
     });
 
@@ -851,7 +849,7 @@ function addAgileArc(slide, pres, opts) {
     if (step.detail) {
       slide.addText(step.detail, {
         x: stepsAreaX + circleSize + 0.15, y: sy + stepRowH * 0.5, w: stepsAreaW - circleSize - 0.3, h: stepRowH * 0.45,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         valign: "top", margin: 0,
       });
     }
@@ -879,14 +877,14 @@ Dreieck mit überlagerten horizontalen Schichten, Beschreibungstext rechts.
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.layers - Array of { label: string, detail: string } (top to bottom)
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addPyramid(slide, pres, opts) {
   const layers = opts.layers || [];
   const n = layers.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const pyramidW = opts.w * 0.45;
   const pyramidH = opts.h;
   const pyramidX = opts.x;
@@ -897,11 +895,11 @@ function addPyramid(slide, pres, opts) {
   // Color gradient: darker at top, lighter at bottom
   const colorSteps = [
     primary,
-    "01B3BB",
-    "7CB7BA",
-    "A8CFD1",
-    "9DC9CB",
-    "D8D8D8",
+    palette.primaryLight,
+    palette.primaryPale,
+    palette.accent,
+    palette.accentLight,
+    palette.border,
   ];
 
   layers.forEach((layer, i) => {
@@ -931,14 +929,14 @@ function addPyramid(slide, pres, opts) {
     slide.addShape(pres.shapes.LINE, {
       x: lx + avgWidth, y: ly + layerH / 2,
       w: detailX - (lx + avgWidth), h: 0,
-      line: { color: "D8D8D8", width: 0.5, dashType: "dash" },
+      line: { color: palette.border, width: 0.5, dashType: "dash" },
     });
 
     // Detail text on the right
     if (layer.detail) {
       slide.addText(layer.detail, {
         x: detailX, y: ly, w: detailW, h: layerH,
-        fontSize: 9, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 9, fontFace: "Century Gothic", color: palette.textBody,
         valign: "middle", margin: 0,
       });
     }
@@ -965,16 +963,16 @@ function addPyramid(slide, pres, opts) {
  * @param {object} opts.weaknesses - { text: string }
  * @param {object} opts.opportunities - { text: string }
  * @param {object} opts.threats    - { text: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  * @param {object} [opts.icons] - { s: base64, w: base64, o: base64, t: base64 } icon data
  */
 function addSWOT(slide, pres, opts) {
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const items = [
     { letter: "S", label: "STRENGTHS", text: opts.strengths?.text || "", color: primary },
-    { letter: "W", label: "WEAKNESSES", text: opts.weaknesses?.text || "", color: "3F3F3F" },
-    { letter: "O", label: "OPPORTUNITIES", text: opts.opportunities?.text || "", color: "01B3BB" },
-    { letter: "T", label: "THREATS", text: opts.threats?.text || "", color: "7F7F7F" },
+    { letter: "W", label: "WEAKNESSES", text: opts.weaknesses?.text || "", color: palette.textBody },
+    { letter: "O", label: "OPPORTUNITIES", text: opts.opportunities?.text || "", color: palette.primaryLight },
+    { letter: "T", label: "THREATS", text: opts.threats?.text || "", color: palette.midGrey },
   ];
 
   const rowH = opts.h / 4;
@@ -1003,7 +1001,7 @@ function addSWOT(slide, pres, opts) {
       // Fallback: letter inside circle
       slide.addText(item.letter, {
         x: opts.x, y: ry + (rowH - circleSize) / 2, w: circleSize, h: circleSize,
-        fontSize: 22, fontFace: "Century Gothic", color: "FFFFFF",
+        fontSize: 22, fontFace: "Century Gothic", color: palette.textLight,
         bold: true, align: "center", valign: "middle", margin: 0,
       });
     }
@@ -1019,7 +1017,7 @@ function addSWOT(slide, pres, opts) {
     slide.addText(item.text, {
       x: opts.x + circleSize + 0.2 + labelW + 0.15, y: ry + 0.05,
       w: opts.w - circleSize - 0.2 - labelW - 0.15, h: rowH - 0.1,
-      fontSize: 9, fontFace: "Century Gothic", color: "3F3F3F",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textBody,
       valign: "middle", margin: 0,
     });
 
@@ -1027,7 +1025,7 @@ function addSWOT(slide, pres, opts) {
     if (i < 3) {
       slide.addShape(pres.shapes.LINE, {
         x: opts.x, y: ry + rowH, w: opts.w, h: 0,
-        line: { color: "D8D8D8", width: 0.5 },
+        line: { color: palette.border, width: 0.5 },
       });
     }
   });
@@ -1055,9 +1053,9 @@ function addSWOT(slide, pres, opts) {
 function addVennDiagram(slide, pres, opts) {
   const circles = opts.circles || [];
   const colors = [
-    { fill: "00868C", transparency: 30 },
-    { fill: "01B3BB", transparency: 30 },
-    { fill: "3F3F3F", transparency: 30 },
+    { fill: palette.primary, transparency: 30 },
+    { fill: palette.primaryLight, transparency: 30 },
+    { fill: palette.textBody, transparency: 30 },
   ];
 
   const centerCX = opts.x + opts.w / 2;
@@ -1097,7 +1095,7 @@ function addVennDiagram(slide, pres, opts) {
   if (opts.centerLabel) {
     slide.addText(opts.centerLabel, {
       x: centerCX - 0.5, y: centerCY - 0.2, w: 1.0, h: 0.4,
-      fontSize: 8, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
   }
@@ -1109,7 +1107,7 @@ function addVennDiagram(slide, pres, opts) {
     if (c.detail) {
       slide.addText(c.detail, {
         x: opts.x + i * detailColW, y: detailY, w: detailColW, h: opts.h * 0.2,
-        fontSize: 8, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textBody,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -1133,15 +1131,15 @@ function addVennDiagram(slide, pres, opts) {
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.factors - Array of { label: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addPentagonStrategy(slide, pres, opts) {
   const factors = opts.factors || [];
   const n = factors.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const colors = [primary, "01B3BB", "3F3F3F", "7CB7BA", "7F7F7F"];
+  const primary = opts.primaryColor || palette.primary;
+  const colors = [primary, palette.primaryLight, palette.textBody, palette.primaryPale, palette.midGrey];
   const centerCX = opts.x + opts.w / 2;
   const centerCY = opts.y + opts.h * 0.35;
   const arcRadius = Math.min(opts.w * 0.38, opts.h * 0.3);
@@ -1164,7 +1162,7 @@ function addPentagonStrategy(slide, pres, opts) {
         x: positions[i].cx, y: positions[i].cy,
         w: positions[j].cx - positions[i].cx,
         h: positions[j].cy - positions[i].cy,
-        line: { color: "D8D8D8", width: 0.75 },
+        line: { color: palette.border, width: 0.75 },
       });
     }
   }
@@ -1182,7 +1180,7 @@ function addPentagonStrategy(slide, pres, opts) {
     slide.addText(factors[i].label || "", {
       x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
       w: circleSize, h: circleSize,
-      fontSize: 7, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1191,7 +1189,7 @@ function addPentagonStrategy(slide, pres, opts) {
       const detailY = pos.cy + circleSize / 2 + 0.1;
       slide.addText(factors[i].detail, {
         x: pos.cx - 1.0, y: detailY, w: 2.0, h: 0.8,
-        fontSize: 7, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textMuted,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -1216,15 +1214,15 @@ function addPentagonStrategy(slide, pres, opts) {
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.dimensions - Array of 5: { letter: "T", label: "Time", detail: string }
  * @param {string} [opts.centerLabel="Project"]
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addProjectPentagon(slide, pres, opts) {
   const dims = opts.dimensions || [];
   const n = dims.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const colors = [primary, "01B3BB", "3F3F3F", "7CB7BA", "7F7F7F"];
+  const primary = opts.primaryColor || palette.primary;
+  const colors = [primary, palette.primaryLight, palette.textBody, palette.primaryPale, palette.midGrey];
   const centerCX = opts.x + opts.w / 2;
   const centerCY = opts.y + opts.h / 2;
   const radius = Math.min(opts.w, opts.h) * 0.33;
@@ -1247,7 +1245,7 @@ function addProjectPentagon(slide, pres, opts) {
         x: positions[i].cx, y: positions[i].cy,
         w: positions[j].cx - positions[i].cx,
         h: positions[j].cy - positions[i].cy,
-        line: { color: "D8D8D8", width: 0.75 },
+        line: { color: palette.border, width: 0.75 },
       });
     }
   }
@@ -1255,7 +1253,7 @@ function addProjectPentagon(slide, pres, opts) {
   // Center label
   slide.addShape(pres.shapes.OVAL, {
     x: centerCX - 0.5, y: centerCY - 0.35, w: 1.0, h: 0.7,
-    fill: { color: "F2F2F2" },
+    fill: { color: palette.lightGray },
     line: { color: primary, width: 1.5 },
   });
   slide.addText(opts.centerLabel || "Project", {
@@ -1278,7 +1276,7 @@ function addProjectPentagon(slide, pres, opts) {
     slide.addText(dim.letter || "", {
       x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
       w: circleSize, h: circleSize,
-      fontSize: 18, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 18, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1295,13 +1293,13 @@ function addProjectPentagon(slide, pres, opts) {
 
     slide.addText(dim.label || "", {
       x: textX, y: ly - 0.15, w: 1.4, h: 0.3,
-      fontSize: 9, fontFace: "Century Gothic", color: "000000",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: alignH, valign: "middle", margin: 0,
     });
     if (dim.detail) {
       slide.addText(dim.detail, {
         x: textX, y: ly + 0.15, w: 1.4, h: 0.5,
-        fontSize: 7, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textMuted,
         align: alignH, valign: "top", margin: 0,
       });
     }
@@ -1329,22 +1327,22 @@ Horizontale Linie mit Jahres-Kreisen und Details unterhalb.
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.events - Array of { year: "2020", title: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addHorizontalTimeline(slide, pres, opts) {
   const events = opts.events || [];
   const n = events.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const colors = [primary, "3F3F3F", primary, "3F3F3F", primary, "3F3F3F"];
+  const primary = opts.primaryColor || palette.primary;
+  const colors = [primary, palette.textBody, primary, palette.textBody, primary, palette.textBody];
   const lineY = opts.y + 0.5;  // timeline line y-position
   const circleSize = 0.55;
 
   // Horizontal line
   slide.addShape(pres.shapes.LINE, {
     x: opts.x, y: lineY, w: opts.w, h: 0,
-    line: { color: "D8D8D8", width: 2 },
+    line: { color: palette.border, width: 2 },
   });
 
   const spacing = n > 1 ? opts.w / (n - 1) : 0;
@@ -1362,7 +1360,7 @@ function addHorizontalTimeline(slide, pres, opts) {
     slide.addText(event.year || "", {
       x: cx - circleSize / 2, y: lineY - circleSize / 2,
       w: circleSize, h: circleSize,
-      fontSize: 9, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1380,7 +1378,7 @@ function addHorizontalTimeline(slide, pres, opts) {
 
     slide.addText(event.title || "", {
       x: textX, y: detailY, w: colW, h: 0.35,
-      fontSize: 10, fontFace: "Century Gothic", color: "000000",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: "center", valign: "top", margin: 0,
     });
 
@@ -1388,7 +1386,7 @@ function addHorizontalTimeline(slide, pres, opts) {
     if (event.detail) {
       slide.addText(event.detail, {
         x: textX, y: detailY + 0.35, w: colW, h: opts.h - (detailY - opts.y) - 0.4,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -1412,15 +1410,15 @@ Vertikale Achse mit Jahreszahlen, rechts farbige Kreise mit großer Zahl + Detai
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.events - Array of { year: "2021", value: "458", detail: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addVerticalTimeline(slide, pres, opts) {
   const events = opts.events || [];
   const n = events.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const colors = [primary, "01B3BB", "3F3F3F"];
+  const primary = opts.primaryColor || palette.primary;
+  const colors = [primary, palette.primaryLight, palette.textBody];
   const axisX = opts.x + 1.0;  // x-position of the vertical axis
   const rowH = opts.h / n;
   const bubbleSize = Math.min(1.0, rowH * 0.7);
@@ -1428,7 +1426,7 @@ function addVerticalTimeline(slide, pres, opts) {
   // Vertical line
   slide.addShape(pres.shapes.LINE, {
     x: axisX, y: opts.y, w: 0, h: opts.h,
-    line: { color: "D8D8D8", width: 2 },
+    line: { color: palette.border, width: 2 },
   });
 
   events.forEach((event, i) => {
@@ -1438,7 +1436,7 @@ function addVerticalTimeline(slide, pres, opts) {
     // Year label (left of axis)
     slide.addText(event.year || "", {
       x: opts.x, y: ry - 0.2, w: 0.9, h: 0.4,
-      fontSize: 14, fontFace: "Century Gothic", color: "000000",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: "right", valign: "middle", margin: 0,
     });
 
@@ -1456,7 +1454,7 @@ function addVerticalTimeline(slide, pres, opts) {
     });
     slide.addText(event.value || "", {
       x: bubbleX, y: ry - bubbleSize / 2, w: bubbleSize, h: bubbleSize,
-      fontSize: 16, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 16, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1465,7 +1463,7 @@ function addVerticalTimeline(slide, pres, opts) {
       slide.addText(event.detail, {
         x: bubbleX + bubbleSize + 0.2, y: ry - 0.3,
         w: opts.w - (bubbleX - opts.x) - bubbleSize - 0.3, h: 0.6,
-        fontSize: 9, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 9, fontFace: "Century Gothic", color: palette.textBody,
         valign: "middle", margin: 0,
       });
     }
@@ -1494,14 +1492,14 @@ function addVerticalTimeline(slide, pres, opts) {
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.items - Array of { label: string, leftDetail: string, rightDetail: string }
  *   Items ordered from narrowest (top) to widest (bottom)
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addFunnelBars(slide, pres, opts) {
   const items = opts.items || [];
   const n = items.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const gap = 0.08;
   const barH = (opts.h - gap * (n - 1)) / n;
   const minW = opts.w * 0.35;
@@ -1515,7 +1513,7 @@ function addFunnelBars(slide, pres, opts) {
     // Bar background
     slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
       x: bx, y: by, w: barW, h: barH,
-      fill: { color: "F2F2F2" }, rectRadius: barH / 2,
+      fill: { color: palette.lightGray }, rectRadius: barH / 2,
     });
 
     // Center label tag
@@ -1527,7 +1525,7 @@ function addFunnelBars(slide, pres, opts) {
     });
     slide.addText(item.label || "", {
       x: tagX, y: by + 0.03, w: tagW, h: barH - 0.06,
-      fontSize: 7, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1535,7 +1533,7 @@ function addFunnelBars(slide, pres, opts) {
     if (item.leftDetail) {
       slide.addText(item.leftDetail, {
         x: bx + 0.15, y: by, w: (barW - tagW) / 2 - 0.25, h: barH,
-        fontSize: 7, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textBody,
         align: "right", valign: "middle", margin: 0,
       });
     }
@@ -1544,7 +1542,7 @@ function addFunnelBars(slide, pres, opts) {
     if (item.rightDetail) {
       slide.addText(item.rightDetail, {
         x: tagX + tagW + 0.1, y: by, w: (barW - tagW) / 2 - 0.25, h: barH,
-        fontSize: 7, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 7, fontFace: "Century Gothic", color: palette.textBody,
         align: "left", valign: "middle", margin: 0,
       });
     }
@@ -1572,7 +1570,7 @@ function addFunnelBars(slide, pres, opts) {
  */
 function addQuadrants(slide, pres, opts) {
   const blocks = opts.blocks || [];
-  const defaultColors = ["00868C", "3F3F3F", "01B3BB", "7F7F7F"];
+  const defaultColors = [palette.primary, palette.textBody, palette.primaryLight, palette.midGrey];
   const colors = opts.colors || defaultColors;
   const gap = 0.15;
   const cellW = (opts.w - gap) / 2;
@@ -1594,14 +1592,14 @@ function addQuadrants(slide, pres, opts) {
     // Large number (top-left of block)
     slide.addText(block.number || String(i + 1), {
       x: bx + 0.2, y: by + 0.1, w: cellW * 0.4, h: cellH * 0.5,
-      fontSize: 36, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 36, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, valign: "top", margin: 0,
     });
 
     // Title
     slide.addText(block.title || "", {
       x: bx + 0.2, y: by + cellH * 0.45, w: cellW - 0.4, h: 0.35,
-      fontSize: 12, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 12, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, valign: "top", margin: 0,
     });
 
@@ -1609,7 +1607,7 @@ function addQuadrants(slide, pres, opts) {
     if (block.detail) {
       slide.addText(block.detail, {
         x: bx + 0.2, y: by + cellH * 0.45 + 0.4, w: cellW - 0.4, h: cellH * 0.45,
-        fontSize: 8, fontFace: "Century Gothic", color: "FFFFFF",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
         valign: "top", margin: 0,
       });
     }
@@ -1634,14 +1632,14 @@ function addQuadrants(slide, pres, opts) {
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.cards - Array of { icon: base64Data, title: string, detail: string }
  * @param {number} [opts.cols] - Override column count
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addIconCardGrid(slide, pres, opts) {
   const cards = opts.cards || [];
   const n = cards.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const cols = opts.cols || Math.min(n, 5);
   const rows = Math.ceil(n / cols);
   const gap = 0.2;
@@ -1658,7 +1656,7 @@ function addIconCardGrid(slide, pres, opts) {
     // Card background
     slide.addShape(pres.shapes.RECTANGLE, {
       x: cx, y: cy, w: cardW, h: cardH,
-      fill: { color: "F2F2F2" },
+      fill: { color: palette.lightGray },
     });
 
     // Top accent bar
@@ -1686,7 +1684,7 @@ function addIconCardGrid(slide, pres, opts) {
     // Title
     slide.addText(card.title || "", {
       x: cx + 0.1, y: cy + 0.2 + iconSize + 0.15, w: cardW - 0.2, h: 0.35,
-      fontSize: 10, fontFace: "Century Gothic", color: "000000",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, align: "center", valign: "top", margin: 0,
     });
 
@@ -1695,7 +1693,7 @@ function addIconCardGrid(slide, pres, opts) {
       slide.addText(card.detail, {
         x: cx + 0.1, y: cy + 0.2 + iconSize + 0.55,
         w: cardW - 0.2, h: cardH - iconSize - 0.85,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -1707,7 +1705,7 @@ function addIconCardGrid(slide, pres, opts) {
 
 ### 5.3 Sprechblasen-Layout (Callout Bubbles)
 
-4 Teal-gefüllte Ellipsen mit Werte-Text.
+4 Primary-gefüllte Ellipsen mit Werte-Text.
 
 **Referenz-Slide:** 6
 
@@ -1719,14 +1717,14 @@ function addIconCardGrid(slide, pres, opts) {
  * @param {object} opts
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.bubbles - Array of { value: string, detail: string }
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addCalloutBubbles(slide, pres, opts) {
   const bubbles = opts.bubbles || [];
   const n = bubbles.length;
   if (n === 0) return;
 
-  const primary = opts.primaryColor || "00868C";
+  const primary = opts.primaryColor || palette.primary;
   const cols = Math.min(n, 4);
   const rows = Math.ceil(n / cols);
   const gap = 0.3;
@@ -1750,7 +1748,7 @@ function addCalloutBubbles(slide, pres, opts) {
     // Value text inside
     slide.addText(b.value || "", {
       x: cx - bubbleW / 2, y: cy - bubbleH / 2, w: bubbleW, h: bubbleH,
-      fontSize: 14, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 14, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
 
@@ -1758,7 +1756,7 @@ function addCalloutBubbles(slide, pres, opts) {
     if (b.detail) {
       slide.addText(b.detail, {
         x: cx - cellW / 2, y: cy + bubbleH / 2 + 0.1, w: cellW, h: cellH * 0.35,
-        fontSize: 8, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textBody,
         align: "center", valign: "top", margin: 0,
       });
     }
@@ -1783,12 +1781,12 @@ function addCalloutBubbles(slide, pres, opts) {
  * @param {number} opts.x, opts.y, opts.w, opts.h
  * @param {Array} opts.panels - Array of 2: { title: string, subtitle: string, detail: string }
  * @param {string} [opts.layout="horizontal"] - "horizontal" (side by side) or "vertical" (stacked)
- * @param {string} [opts.primaryColor="00868C"]
+ * @param {string} [opts.primaryColor=palette.primary]
  */
 function addDualPanel(slide, pres, opts) {
   const panels = opts.panels || [];
-  const primary = opts.primaryColor || "00868C";
-  const colors = [primary, "3F3F3F"];
+  const primary = opts.primaryColor || palette.primary;
+  const colors = [primary, palette.textBody];
   const layout = opts.layout || "horizontal";
   const gap = 0.2;
 
@@ -1811,8 +1809,8 @@ function addDualPanel(slide, pres, opts) {
     // Panel background with colored left border
     slide.addShape(pres.shapes.RECTANGLE, {
       x: px, y: py, w: pw, h: ph,
-      fill: { color: "FFFFFF" },
-      line: { color: "D8D8D8", width: 0.75 },
+      fill: { color: palette.textLight },
+      line: { color: palette.border, width: 0.75 },
     });
     // Left accent bar
     slide.addShape(pres.shapes.RECTANGLE, {
@@ -1831,7 +1829,7 @@ function addDualPanel(slide, pres, opts) {
     if (panel.subtitle) {
       slide.addText(panel.subtitle, {
         x: px + 0.2, y: py + 0.5, w: pw - 0.4, h: 0.3,
-        fontSize: 9, fontFace: "Century Gothic", color: "000000",
+        fontSize: 9, fontFace: "Century Gothic", color: palette.textDark,
         bold: true, valign: "top", margin: 0,
       });
     }
@@ -1840,7 +1838,7 @@ function addDualPanel(slide, pres, opts) {
     if (panel.detail) {
       slide.addText(panel.detail, {
         x: px + 0.2, y: py + 0.85, w: pw - 0.4, h: ph - 1.0,
-        fontSize: 9, fontFace: "Century Gothic", color: "3F3F3F",
+        fontSize: 9, fontFace: "Century Gothic", color: palette.textBody,
         valign: "top", margin: 0,
       });
     }
@@ -1869,20 +1867,20 @@ Hierarchische Struktur mit Personen/Rollen in Karten, verbunden durch rechtwinkl
  * @param {number} opts.w - Total width of chart area
  * @param {number} opts.h - Total height of chart area
  * @param {object} opts.root - Root node: { name, role, children: [{ name, role, children: [...] }] }
- * @param {string} [opts.primaryColor="00868C"] - Root card accent color
- * @param {string} [opts.secondaryColor="3F3F3F"] - Level 2 card accent color
- * @param {string} [opts.tertiaryColor="7F7F7F"] - Level 3 card accent color
- * @param {string} [opts.connectorColor="D8D8D8"] - Line color between cards
+ * @param {string} [opts.primaryColor=palette.primary] - Root card accent color
+ * @param {string} [opts.secondaryColor=palette.textBody] - Level 2 card accent color
+ * @param {string} [opts.tertiaryColor=palette.midGrey] - Level 3 card accent color
+ * @param {string} [opts.connectorColor=palette.border] - Line color between cards
  * @param {string} [opts.cardBg="FFFFFF"] - Card background color
  */
 function addOrgChart(slide, pres, opts) {
   const root = opts.root;
   if (!root) return;
 
-  const primary = opts.primaryColor || "00868C";
-  const secondary = opts.secondaryColor || "3F3F3F";
-  const tertiary = opts.tertiaryColor || "7F7F7F";
-  const connColor = opts.connectorColor || "D8D8D8";
+  const primary = opts.primaryColor || palette.primary;
+  const secondary = opts.secondaryColor || palette.textBody;
+  const tertiary = opts.tertiaryColor || palette.midGrey;
+  const connColor = opts.connectorColor || palette.border;
   const cardBg = opts.cardBg || "FFFFFF";
   const levelColors = [primary, secondary, tertiary];
 
@@ -1984,8 +1982,8 @@ function addOrgChart(slide, pres, opts) {
     slide.addShape(pres.shapes.RECTANGLE, {
       x: pos.x, y: pos.y, w: cardW, h: cardH,
       fill: { color: cardBg },
-      line: { color: "D8D8D8", width: 0.75 },
-      shadow: { type: "outer", color: "000000", blur: 4, offset: 1, angle: 135, opacity: 0.08 },
+      line: { color: palette.border, width: 0.75 },
+      shadow: { type: "outer", color: palette.textDark, blur: 4, offset: 1, angle: 135, opacity: 0.08 },
     });
 
     // Left accent bar
@@ -1997,14 +1995,14 @@ function addOrgChart(slide, pres, opts) {
     // Name
     slide.addText(entry.node.name || "", {
       x: pos.x + 0.18, y: pos.y + 0.08, w: cardW - 0.3, h: 0.32,
-      fontSize: 10, fontFace: "Century Gothic", color: "000000",
+      fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "middle", margin: 0,
     });
 
     // Role
     slide.addText(entry.node.role || "", {
       x: pos.x + 0.18, y: pos.y + 0.38, w: cardW - 0.3, h: 0.3,
-      fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+      fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
       valign: "top", margin: 0,
     });
   });
@@ -2029,18 +2027,18 @@ Gleichbreite horizontale Schichten übereinander — ideal für Architekturdiagr
  * @param {number} opts.h - Total height
  * @param {Array} opts.layers - Array of layer objects (top to bottom):
  *   { label: string, detail?: string, components?: [{ name: string, detail?: string }], color?: string }
- * @param {string} [opts.primaryColor="00868C"] - Default color palette base
- * @param {string} [opts.borderColor="D8D8D8"] - Layer border color
+ * @param {string} [opts.primaryColor=palette.primary] - Default color palette base
+ * @param {string} [opts.borderColor=palette.border] - Layer border color
  * @param {string} [opts.componentBg="FFFFFF"] - Component box background
  * @param {string} [opts.sideLabel] - Optional cross-cutting label on the right side
- * @param {string} [opts.sideLabelColor="3F3F3F"] - Side label strip color
+ * @param {string} [opts.sideLabelColor=palette.textBody] - Side label strip color
  */
 function addLayerStack(slide, pres, opts) {
   const layers = opts.layers || [];
   const n = layers.length;
   if (n === 0) return;
 
-  const borderColor = opts.borderColor || "D8D8D8";
+  const borderColor = opts.borderColor || palette.border;
   const componentBg = opts.componentBg || "FFFFFF";
 
   // Reserve space for side label if present
@@ -2051,12 +2049,12 @@ function addLayerStack(slide, pres, opts) {
   const gap = 0.08;
   const layerH = (opts.h - gap * (n - 1)) / n;
 
-  // Teal-gradient shades top-to-bottom (dark → light)
-  const tealShades = ["00868C", "01B3BB", "7CB7BA", "A8CFD1", "9DC9CB", "D8D8D8"];
+  // Primary-gradient shades top-to-bottom (dark → light)
+  const accentShades = [palette.primary, palette.primaryLight, palette.primaryPale, palette.accent, palette.accentLight, palette.border];
 
   layers.forEach((layer, i) => {
     const ly = opts.y + i * (layerH + gap);
-    const layerColor = layer.color || tealShades[Math.min(i, tealShades.length - 1)];
+    const layerColor = layer.color || accentShades[Math.min(i, accentShades.length - 1)];
 
     // Layer background
     slide.addShape(pres.shapes.RECTANGLE, {
@@ -2074,14 +2072,14 @@ function addLayerStack(slide, pres, opts) {
       // Layer label (left side)
       slide.addText(layer.label || "", {
         x: stackX + 0.15, y: ly, w: labelW - 0.15, h: layer.detail ? layerH * 0.55 : layerH,
-        fontSize: 10, fontFace: "Century Gothic", color: "000000",
+        fontSize: 10, fontFace: "Century Gothic", color: palette.textDark,
         bold: true, valign: "middle", margin: 0,
       });
 
       if (layer.detail) {
         slide.addText(layer.detail, {
           x: stackX + 0.15, y: ly + layerH * 0.55, w: labelW - 0.15, h: layerH * 0.4,
-          fontSize: 7, fontFace: "Century Gothic", color: "5B5D60",
+          fontSize: 7, fontFace: "Century Gothic", color: palette.textMuted,
           valign: "top", margin: 0,
         });
       }
@@ -2100,19 +2098,19 @@ function addLayerStack(slide, pres, opts) {
           x: cx, y: compY, w: compW, h: compH,
           fill: { color: componentBg },
           line: { color: borderColor, width: 0.5 },
-          shadow: { type: "outer", color: "000000", blur: 3, offset: 1, angle: 135, opacity: 0.06 },
+          shadow: { type: "outer", color: palette.textDark, blur: 3, offset: 1, angle: 135, opacity: 0.06 },
         });
 
         slide.addText(comp.name || "", {
           x: cx + 0.05, y: compY + 0.03, w: compW - 0.1, h: compH * 0.5,
-          fontSize: 8, fontFace: "Century Gothic", color: "000000",
+          fontSize: 8, fontFace: "Century Gothic", color: palette.textDark,
           bold: true, align: "center", valign: "middle", margin: 0,
         });
 
         if (comp.detail) {
           slide.addText(comp.detail, {
             x: cx + 0.05, y: compY + compH * 0.5, w: compW - 0.1, h: compH * 0.45,
-            fontSize: 7, fontFace: "Century Gothic", color: "5B5D60",
+            fontSize: 7, fontFace: "Century Gothic", color: palette.textMuted,
             align: "center", valign: "top", margin: 0,
           });
         }
@@ -2122,14 +2120,14 @@ function addLayerStack(slide, pres, opts) {
       // Simple layer: label centered
       slide.addText(layer.label || "", {
         x: stackX + 0.2, y: ly, w: stackW - 0.4, h: layer.detail ? layerH * 0.55 : layerH,
-        fontSize: 11, fontFace: "Century Gothic", color: "000000",
+        fontSize: 11, fontFace: "Century Gothic", color: palette.textDark,
         bold: true, align: "center", valign: "middle", margin: 0,
       });
 
       if (layer.detail) {
         slide.addText(layer.detail, {
           x: stackX + 0.2, y: ly + layerH * 0.55, w: stackW - 0.4, h: layerH * 0.4,
-          fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+          fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
           align: "center", valign: "top", margin: 0,
         });
       }
@@ -2139,7 +2137,7 @@ function addLayerStack(slide, pres, opts) {
   // Optional cross-cutting side strip
   if (opts.sideLabel) {
     const sideX = stackX + stackW + 0.15;
-    const sideLabelColor = opts.sideLabelColor || "3F3F3F";
+    const sideLabelColor = opts.sideLabelColor || palette.textBody;
 
     slide.addShape(pres.shapes.RECTANGLE, {
       x: sideX, y: opts.y, w: sideW, h: opts.h,
@@ -2148,7 +2146,7 @@ function addLayerStack(slide, pres, opts) {
 
     slide.addText(opts.sideLabel, {
       x: sideX, y: opts.y, w: sideW, h: opts.h,
-      fontSize: 9, fontFace: "Century Gothic", color: "FFFFFF",
+      fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle",
       rotate: 270, margin: 0,
     });
@@ -2176,7 +2174,7 @@ Wrapper für native PptxGenJS-Charts (BAR, LINE, PIE, DOUGHNUT, SCATTER, RADAR),
  * @param {Array} opts.data - PptxGenJS chart data: [{ name, labels, values }]
  * @param {string} [opts.title] - Title above chart
  * @param {string} [opts.subtitle] - Subtitle below title
- * @param {Array} [opts.colors] - Override chart colors; defaults to Capco teal palette
+ * @param {Array} [opts.colors] - Override chart colors; defaults to selected color palette
  * @param {boolean} [opts.showLegend=true] - Show legend
  * @param {string} [opts.legendPos="b"] - Legend position: "b"|"t"|"l"|"r"
  * @param {boolean} [opts.showValue=false] - Show data labels on elements
@@ -2189,8 +2187,8 @@ function addStyledChart(slide, pres, opts) {
   if (data.length === 0) return;
 
   const capcoColors = opts.colors || [
-    "00868C", "01B3BB", "3F3F3F", "7CB7BA", "A8CFD1",
-    "9DC9CB", "7F7F7F", "5B5D60", "D8D8D8",
+    palette.primary, palette.primaryLight, palette.textBody, palette.primaryPale, palette.accent,
+    palette.accentLight, palette.midGrey, palette.textMuted, palette.border,
   ];
 
   // Map type string to pres.charts enum
@@ -2216,13 +2214,13 @@ function addStyledChart(slide, pres, opts) {
   if (opts.title) {
     slide.addText(opts.title, {
       x: opts.x, y: opts.y, w: opts.w, h: 0.3,
-      fontSize: 11, fontFace: "Century Gothic", color: "000000",
+      fontSize: 11, fontFace: "Century Gothic", color: palette.textDark,
       bold: true, valign: "bottom", margin: 0,
     });
     if (opts.subtitle) {
       slide.addText(opts.subtitle, {
         x: opts.x, y: opts.y + 0.28, w: opts.w, h: 0.25,
-        fontSize: 8, fontFace: "Century Gothic", color: "5B5D60",
+        fontSize: 8, fontFace: "Century Gothic", color: palette.textMuted,
         valign: "top", margin: 0,
       });
     }
@@ -2235,24 +2233,24 @@ function addStyledChart(slide, pres, opts) {
   const chartOpts = {
     x: chartX, y: chartY, w: chartW, h: chartH,
     chartColors: capcoColors,
-    chartArea: { fill: { color: "FFFFFF" }, roundedCorners: false },
+    chartArea: { fill: { color: palette.textLight }, roundedCorners: false },
     showTitle: false,
     showLegend: opts.showLegend !== false,
     legendPos: opts.legendPos || "b",
     legendFontSize: 8,
     legendFontFace: "Century Gothic",
-    legendColor: "3F3F3F",
-    catAxisLabelColor: "5B5D60",
+    legendColor: palette.textBody,
+    catAxisLabelColor: palette.textMuted,
     catAxisLabelFontSize: 8,
     catAxisLabelFontFace: "Century Gothic",
-    valAxisLabelColor: "5B5D60",
+    valAxisLabelColor: palette.textMuted,
     valAxisLabelFontSize: 8,
     valAxisLabelFontFace: "Century Gothic",
     valGridLine: { color: "E8E8E8", size: 0.5 },
     catGridLine: { style: "none" },
     showValue: opts.showValue || false,
     showPercent: opts.showPercent || false,
-    dataLabelColor: "3F3F3F",
+    dataLabelColor: palette.textBody,
     dataLabelFontSize: 8,
     dataLabelFontFace: "Century Gothic",
     dataLabelPosition: "outEnd",
@@ -2301,7 +2299,7 @@ function addStyledChart(slide, pres, opts) {
 
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "06", "ORGANIZATION", "TEAM & ARCHITECTURE",
   "Team structure and technology stack overview");
 
@@ -2357,7 +2355,7 @@ addLayerStack(slide, pres, {
 
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "07", "FINANCIALS", "REVENUE ANALYSIS",
   "Quarterly revenue breakdown and trend analysis");
 
@@ -2399,7 +2397,7 @@ Kombiniert Donut-KPIs oben mit Progress-Bars unten auf einer Slide.
 ```javascript
 // Create slide with capco-slides header
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "04", "PERFORMANCE", "KPI DASHBOARD",
   "Quarterly performance metrics and team progress");
 
@@ -2431,7 +2429,7 @@ addProgressBars(slide, pres, {
 
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "02", "STRATEGY", "FRAMEWORK",
   "Strategic positioning and competitive analysis");
 
@@ -2460,7 +2458,7 @@ addSWOT(slide, pres, {
 
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.textLight };
 addSlideHeader(slide, pres, "05", "ROADMAP", "IMPLEMENTATION PLAN",
   "Key milestones and strategic priorities");
 
@@ -2538,11 +2536,11 @@ addQuadrants(slide, pres, {
 Dieser Skill liefert **24 parametrische Komponenten-Funktionen** die als Bausteine in Capco-Präsentationen verwendet werden. Jede Funktion:
 
 - Hat eine konsistente Signatur: `(slide, pres, opts)` mit `opts.x, opts.y, opts.w, opts.h`
-- Verwendet die Teal/Grau-Farbpalette als Default
+- Verwendet die extern gewählte Farbpalette als Default
 - Akzeptiert parametrische Farb- und Inhalt-Overrides
 - Berechnet Positionen dynamisch basierend auf dem verfügbaren Raum
 - Ist lauffähig mit PptxGenJS ohne zusätzliche Abhängigkeiten (außer react-icons für Icon-Karten)
 
 **Kategorien:** Daten-Visualisierungen (1.x), Prozess & Flow (2.x), Struktur (3.x), Timeline (4.x), Spezial (5.x), Organisation & Architektur (6.x)
 
-**Workflow:** Immer zuerst `/mnt/skills/user/capco-slides/SKILL.md` für das Deck-Gerüst lesen, dann diese Datei für die visuellen Komponenten.
+**Workflow:** Immer zuerst den capco-slides Skill für das Deck-Gerüst nutzen (bereits im Prompt enthalten), dann diese Datei für die visuellen Komponenten.

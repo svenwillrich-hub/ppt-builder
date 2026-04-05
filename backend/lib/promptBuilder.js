@@ -80,12 +80,16 @@ ${uploadedFilePaths ? `## Uploaded Reference Files\nThe following files are avai
 ${fileContents}
 
 ## Instructions
+
+Think carefully about the **storyline** across all slides. Each slide must logically build on the previous one, creating a coherent narrative arc from start to finish.
+
 Return ONLY a valid JSON array with this structure for each slide:
 [
   {
     "slideNumber": 1,
-    "actionTitle": "Key message of this slide",
-    "description": "Detailed content description",
+    "actionTitle": "Bold, concise slide title",
+    "coreMessage": "One sentence explaining the key takeaway and how this slide fits into the overall storyline",
+    "description": "Three sentences providing more detailed context. What specific content, data, or arguments belong on this slide. What visual approach or layout would best communicate the message.",
     "slideType": "standard",
     "researchNeeded": false
   }
@@ -142,7 +146,40 @@ For each research slide:
 Language: ${language || 'english'}
 
 ## Color & Typography Customization
-${palette ? `CUSTOM Color Palette: ${palette.name}\nColors (use for ALL accents, charts, backgrounds, headings):\n${palette.colors.map((c, i) => `  Color ${i + 1}: ${c}`).join('\n')}\nIMPORTANT: Override any skill-defined colors with these palette colors.` : 'Use the colors defined in the skill/style guidelines. If none specified, use a professional consulting color scheme.'}
+${palette ? (() => {
+  const c = palette.colors.map(hex => hex.replace('#', ''));
+  return `CUSTOM Color Palette: ${palette.name}
+
+CRITICAL: Use EXACTLY these hex values wherever the skills reference palette.* variables:
+
+\`\`\`javascript
+const palette = {
+  // Accent colors — from selected palette
+  primary:      "${c[0]}",  // Main accent: headers, bars, highlights
+  primaryLight: "${c[4] || c[0]}",  // Secondary accent
+  primaryPale:  "${c[2] || c[0]}",  // Subtle accent backgrounds
+  accent:       "${c[1]}",  // Charts, secondary visual encoding
+  accentLight:  "${c[3] || c[2] || c[0]}",  // Light accent variant
+  alertRed:     "${c[3] || 'CC0000'}",  // Emphasis, warnings
+  darkGreen:    "${c[5] || '2D6A2E'}",  // Category encoding
+
+  // Neutral colors — fixed
+  lightBg:      "FFFFFF",
+  lightGray:    "F2F2F2",
+  textDark:     "000000",
+  textBody:     "3F3F3F",
+  textMuted:    "5B5D60",
+  textSubtle:   "57677A",
+  textLight:    "FFFFFF",
+  cardBg:       "FFFFFF",
+  border:       "D8D8D8",
+  midGrey:      "7F7F7F",
+};
+\`\`\`
+
+For SVG skills, prepend "#" to each value (e.g. "#${c[0]}" instead of "${c[0]}").
+All 6 palette colors: ${palette.colors.join(', ')}`;
+})() : 'No palette selected. Use a professional consulting color scheme with blue as primary accent.'}
 ${font ? `\nCUSTOM Font: ${font}\nUse "${font}" for ALL text in the presentation (titles, body, labels). This overrides any skill-defined fonts.` : ''}
 
 ## Style Guidelines

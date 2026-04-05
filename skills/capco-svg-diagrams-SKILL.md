@@ -14,9 +14,9 @@ Die Funktionen erzeugen **SVG-Strings**, die via `sharp` zu PNG konvertiert und 
 ## Zusammenspiel mit den anderen Skills
 
 **Workflow:**
-1. Lies `/mnt/skills/user/capco-slides/SKILL.md` für das Deck-Gerüst
-2. Lies `/mnt/skills/public/pptx/pptxgenjs.md` für die PptxGenJS-API
-3. Lies `/mnt/skills/user/capco-visual-components/SKILL.md` für native Komponenten
+1. Folge dem capco-slides Skill für das Deck-Gerüst — bereits im Prompt enthalten
+2. PptxGenJS ist vorinstalliert unter `/app/node_modules/pptxgenjs` — NICHT von `/mnt/skills/` lesen
+3. Folge dem capco-visual-components Skill für native Komponenten — bereits im Prompt enthalten
 4. Lies **diese Datei** für SVG-basierte Diagramme
 5. Erstelle Slides mit `capco-slides`-Patterns, füge native Komponenten + SVG-Diagramme ein
 
@@ -30,23 +30,24 @@ Die Funktionen erzeugen **SVG-Strings**, die via `sharp` zu PNG konvertiert und 
 
 ## Referenz-Farbschema
 
-Identisch mit `capco-visual-components` — Farben hier mit `#`-Prefix für SVG:
+**IMPORTANT: Colors are provided externally via the Color Palette setting.** Use the palette colors from the `## Color & Typography Customization` section of the prompt. SVG colors require `#` prefix — prepend `#` to all palette values.
 
 ```javascript
+// Map externally provided palette colors (add # prefix for SVG):
 const SVG_COLORS = {
-  primary:      "#00868C",  // Capco Teal
-  primaryLight: "#01B3BB",  // Lighter Teal
-  dark:         "#3F3F3F",  // Dark accent / text
-  midGrey:      "#7F7F7F",  // Mid grey
-  lightTeal1:   "#7CB7BA",  // Light teal variant
-  lightTeal2:   "#A8CFD1",  // Lighter teal
-  lightTeal3:   "#9DC9CB",  // Soft teal
-  paleGrey:     "#F2F2F2",  // Card backgrounds
+  primary:      "#" + palette.primary,       // Main accent
+  primaryLight: "#" + palette.primaryLight,  // Secondary accent
+  primaryPale:  "#" + palette.primaryPale,   // Subtle accent backgrounds
+  accent:       "#" + palette.accent,        // Charts, secondary visual encoding
+  accentLight:  "#" + palette.accentLight || "#" + palette.border,  // Light accent variant
+  dark:         "#" + palette.textBody,      // Dark accent / text
+  midGrey:      "#" + palette.midGrey,       // Mid grey
+  paleGrey:     "#" + palette.lightGray,     // Card backgrounds
   white:        "#FFFFFF",
   black:        "#000000",
-  textBody:     "#3F3F3F",
-  textMuted:    "#5B5D60",
-  border:       "#D8D8D8",
+  textBody:     "#" + palette.textBody,
+  textMuted:    "#" + palette.textMuted,
+  border:       "#" + palette.border,
 };
 ```
 
@@ -89,7 +90,7 @@ async function addSvgDiagram(slide, pres, svgString, pos, renderWidth = 1600) {
 **Typisches Code-Muster:**
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.lightBg };
 addSlideHeader(slide, pres, "04", "PROCESS", "APPROVAL WORKFLOW", "End-to-end request flow");
 
 // 1. Build SVG string
@@ -107,11 +108,11 @@ Jedes SVG dieses Skills verwendet diese gemeinsamen Defs. Die Build-Funktionen f
 <defs>
   <!-- Pfeilspitze (Standard) -->
   <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#7F7F7F"/>
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.midGrey/>
   </marker>
-  <!-- Pfeilspitze (Teal) -->
-  <marker id="arrow-teal" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#00868C"/>
+  <!-- Pfeilspitze (Primary) -->
+  <marker id="arrow-primary" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.primary/>
   </marker>
   <!-- Schatten -->
   <filter id="shadow-sm">
@@ -149,9 +150,9 @@ Vertikaler oder horizontaler Prozessfluss mit Prozess-Boxen, Entscheidungs-Raute
  *   { id: string, type: "start"|"end"|"process"|"decision", label: string, detail?: string }
  * @param {Array} opts.edges - Array of edge objects:
  *   { from: string, to: string, label?: string ("Ja"/"Nein"), direction?: "down"|"right"|"left" }
- * @param {string} [opts.primaryColor="#00868C"]
- * @param {string} [opts.decisionColor="#F2F2F2"] - Decision diamond fill
- * @param {string} [opts.decisionBorder="#01B3BB"] - Decision diamond border
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
+ * @param {string} [opts.decisionColor=SVG_COLORS.paleGrey] - Decision diamond fill
+ * @param {string} [opts.decisionBorder=SVG_COLORS.primaryLight] - Decision diamond border
  * @param {string} [opts.processColor="#FFFFFF"] - Process box fill
  * @param {string} [opts.direction="vertical"] - "vertical" (top→bottom) or "horizontal" (left→right)
  * @returns {string} Complete SVG markup
@@ -159,10 +160,10 @@ Vertikaler oder horizontaler Prozessfluss mit Prozess-Boxen, Entscheidungs-Raute
 function buildFlowchartSvg(opts) {
   const W = opts.width || 1000;
   const H = opts.height || 700;
-  const primary = opts.primaryColor || "#00868C";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
   const processColor = opts.processColor || "#FFFFFF";
-  const decisionColor = opts.decisionColor || "#F2F2F2";
-  const decisionBorder = opts.decisionBorder || "#01B3BB";
+  const decisionColor = opts.decisionColor || SVG_COLORS.paleGrey;
+  const decisionBorder = opts.decisionBorder || SVG_COLORS.primaryLight;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const nodes = opts.nodes || [];
   const edges = opts.edges || [];
@@ -230,17 +231,17 @@ function buildFlowchartSvg(opts) {
       // L-shaped route via midpoint
       const midY = y1 + (y2 - y1) / 2;
       svgContent += `<path d="M${x1},${y1} L${x1},${midY} L${x2},${midY} L${x2},${y2}" `
-        + `fill="none" stroke="#7F7F7F" stroke-width="1.8" marker-end="url(#arrow)"/>`;
+        + `fill="none" stroke=SVG_COLORS.midGrey stroke-width="1.8" marker-end="url(#arrow)"/>`;
     } else {
       svgContent += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" `
-        + `stroke="#7F7F7F" stroke-width="1.8" marker-end="url(#arrow)"/>`;
+        + `stroke=SVG_COLORS.midGrey stroke-width="1.8" marker-end="url(#arrow)"/>`;
     }
 
     // Edge label
     if (edge.label) {
       const labelX = (x1 + x2) / 2 + (Math.abs(dx) > Math.abs(dy) ? 0 : 14);
       const labelY = (y1 + y2) / 2 + (Math.abs(dx) > Math.abs(dy) ? -10 : 0);
-      const labelColor = edge.label.toLowerCase() === "ja" || edge.label.toLowerCase() === "yes" ? "#00868C" : "#3F3F3F";
+      const labelColor = edge.label.toLowerCase() === "ja" || edge.label.toLowerCase() === "yes" ? SVG_COLORS.primary : SVG_COLORS.dark;
       svgContent += `<text x="${labelX}" y="${labelY}" text-anchor="middle" `
         + `fill="${labelColor}" font-size="12" font-weight="bold" font-family="${font}">${edge.label}</text>`;
     }
@@ -254,7 +255,7 @@ function buildFlowchartSvg(opts) {
 
     if (node.type === "start" || node.type === "end") {
       // Oval
-      const fill = node.type === "start" ? primary : "#3F3F3F";
+      const fill = node.type === "start" ? primary : SVG_COLORS.dark;
       svgContent += `<ellipse cx="${cx}" cy="${cy}" rx="${ovalRx}" ry="${ovalRy}" fill="${fill}" filter="url(#shadow-sm)"/>`;
       svgContent += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" fill="#FFFFFF" `
         + `font-size="13" font-weight="bold" font-family="${font}">${node.label}</text>`;
@@ -263,19 +264,19 @@ function buildFlowchartSvg(opts) {
       // Diamond / Raute
       svgContent += `<polygon points="${cx},${cy - diamondH / 2} ${cx + diamondW / 2},${cy} ${cx},${cy + diamondH / 2} ${cx - diamondW / 2},${cy}" `
         + `fill="${decisionColor}" stroke="${decisionBorder}" stroke-width="1.8" filter="url(#shadow-sm)"/>`;
-      svgContent += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="#3F3F3F" `
+      svgContent += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" fill=SVG_COLORS.dark `
         + `font-size="11" font-weight="bold" font-family="${font}">${node.label}</text>`;
 
     } else {
       // Process box
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="${nodeW}" height="${nodeH}" `
-        + `rx="8" fill="${processColor}" stroke="#D8D8D8" stroke-width="1.5" filter="url(#shadow-sm)"/>`;
+        + `rx="8" fill="${processColor}" stroke=SVG_COLORS.border stroke-width="1.5" filter="url(#shadow-sm)"/>`;
       // Left accent bar
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="5" height="${nodeH}" rx="2" fill="${primary}"/>`;
-      svgContent += `<text x="${cx + 4}" y="${cy + (node.detail ? -3 : 5)}" text-anchor="middle" fill="#3F3F3F" `
+      svgContent += `<text x="${cx + 4}" y="${cy + (node.detail ? -3 : 5)}" text-anchor="middle" fill=SVG_COLORS.dark `
         + `font-size="12" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
-        svgContent += `<text x="${cx + 4}" y="${cy + 14}" text-anchor="middle" fill="#5B5D60" `
+        svgContent += `<text x="${cx + 4}" y="${cy + 14}" text-anchor="middle" fill=SVG_COLORS.textMuted `
           + `font-size="10" font-family="${font}">${node.detail}</text>`;
       }
     }
@@ -284,7 +285,7 @@ function buildFlowchartSvg(opts) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#7F7F7F"/>
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.midGrey/>
   </marker>
   <filter id="shadow-sm"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/></filter>
 </defs>
@@ -308,14 +309,14 @@ Parallele horizontale oder vertikale Bahnen (Lanes) die Verantwortlichkeiten dar
  * @param {Array} opts.lanes - Array of lane definitions: { id: string, label: string, color?: string }
  * @param {Array} opts.nodes - Array of { id, label, lane: laneId, col: 0-based column position, type?: "start"|"end"|"process"|"decision" }
  * @param {Array} opts.edges - Array of { from, to, label? }
- * @param {string} [opts.primaryColor="#00868C"]
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
  * @param {string} [opts.direction="horizontal"] - Lanes run "horizontal" (stacked top-bottom) or "vertical" (side by side)
  * @returns {string} SVG markup
  */
 function buildSwimlaneSvg(opts) {
   const W = opts.width || 1200;
   const H = opts.height || 700;
-  const primary = opts.primaryColor || "#00868C";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const lanes = opts.lanes || [];
   const nodes = opts.nodes || [];
@@ -327,7 +328,7 @@ function buildSwimlaneSvg(opts) {
 
   // Build lane backgrounds
   let svgContent = '';
-  const laneColors = ["#F2F2F2", "#FFFFFF"];  // alternating
+  const laneColors = [SVG_COLORS.paleGrey, "#FFFFFF"];  // alternating
 
   lanes.forEach((lane, i) => {
     const ly = 5 + i * laneH;
@@ -335,7 +336,7 @@ function buildSwimlaneSvg(opts) {
 
     // Lane background
     svgContent += `<rect x="${headerW}" y="${ly}" width="${W - headerW - 5}" height="${laneH}" `
-      + `fill="${bgColor}" stroke="#D8D8D8" stroke-width="0.8"/>`;
+      + `fill="${bgColor}" stroke=SVG_COLORS.border stroke-width="0.8"/>`;
 
     // Lane header
     svgContent += `<rect x="5" y="${ly}" width="${headerW - 5}" height="${laneH}" fill="${primary}" rx="0"/>`;
@@ -375,15 +376,15 @@ function buildSwimlaneSvg(opts) {
     if (Math.abs(dx) > 20 && Math.abs(dy) > 20) {
       const midX = x1 + (x2 - x1) * 0.5;
       svgContent += `<path d="M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}" `
-        + `fill="none" stroke="#7F7F7F" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+        + `fill="none" stroke=SVG_COLORS.midGrey stroke-width="1.5" marker-end="url(#arrow)"/>`;
     } else {
       svgContent += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" `
-        + `stroke="#7F7F7F" stroke-width="1.5" marker-end="url(#arrow)"/>`;
+        + `stroke=SVG_COLORS.midGrey stroke-width="1.5" marker-end="url(#arrow)"/>`;
     }
 
     if (edge.label) {
       svgContent += `<text x="${(x1+x2)/2}" y="${(y1+y2)/2 - 8}" text-anchor="middle" `
-        + `fill="#5B5D60" font-size="9" font-family="${font}">${edge.label}</text>`;
+        + `fill=SVG_COLORS.textMuted font-size="9" font-family="${font}">${edge.label}</text>`;
     }
   });
 
@@ -394,20 +395,20 @@ function buildSwimlaneSvg(opts) {
     const type = node.type || "process";
 
     if (type === "start" || type === "end") {
-      const fill = type === "start" ? primary : "#3F3F3F";
+      const fill = type === "start" ? primary : SVG_COLORS.dark;
       svgContent += `<ellipse cx="${pos.x}" cy="${pos.y}" rx="45" ry="20" fill="${fill}"/>`;
       svgContent += `<text x="${pos.x}" y="${pos.y + 4}" text-anchor="middle" fill="#FFF" `
         + `font-size="11" font-weight="bold" font-family="${font}">${node.label}</text>`;
     } else if (type === "decision") {
       svgContent += `<polygon points="${pos.x},${pos.y-30} ${pos.x+50},${pos.y} ${pos.x},${pos.y+30} ${pos.x-50},${pos.y}" `
-        + `fill="#F2F2F2" stroke="#01B3BB" stroke-width="1.5"/>`;
-      svgContent += `<text x="${pos.x}" y="${pos.y+4}" text-anchor="middle" fill="#3F3F3F" `
+        + `fill=SVG_COLORS.paleGrey stroke=SVG_COLORS.primaryLight stroke-width="1.5"/>`;
+      svgContent += `<text x="${pos.x}" y="${pos.y+4}" text-anchor="middle" fill=SVG_COLORS.dark `
         + `font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
     } else {
       svgContent += `<rect x="${pos.x - nodeW/2}" y="${pos.y - nodeH/2}" width="${nodeW}" height="${nodeH}" `
-        + `rx="6" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="1.2" filter="url(#shadow-sm)"/>`;
+        + `rx="6" fill="#FFFFFF" stroke=SVG_COLORS.border stroke-width="1.2" filter="url(#shadow-sm)"/>`;
       svgContent += `<rect x="${pos.x - nodeW/2}" y="${pos.y - nodeH/2}" width="4" height="${nodeH}" rx="2" fill="${primary}"/>`;
-      svgContent += `<text x="${pos.x + 4}" y="${pos.y + 4}" text-anchor="middle" fill="#3F3F3F" `
+      svgContent += `<text x="${pos.x + 4}" y="${pos.y + 4}" text-anchor="middle" fill=SVG_COLORS.dark `
         + `font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
     }
   });
@@ -415,7 +416,7 @@ function buildSwimlaneSvg(opts) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#7F7F7F"/>
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.midGrey/>
   </marker>
   <filter id="shadow-sm"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/></filter>
 </defs>
@@ -443,14 +444,14 @@ Knoten an frei definierbaren Positionen, verbunden durch gerade Linien oder Béz
  * @param {Array} opts.nodes - Array of node objects:
  *   { id, label, x, y, detail?: string, size?: "sm"|"md"|"lg", color?: string, shape?: "circle"|"rect" }
  * @param {Array} opts.edges - Array of { from, to, label?, style?: "solid"|"dashed", bidirectional?: boolean }
- * @param {string} [opts.primaryColor="#00868C"]
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
  * @param {boolean} [opts.curved=true] - Use Bézier curves for edges
  * @returns {string} SVG markup
  */
 function buildNetworkSvg(opts) {
   const W = opts.width || 1000;
   const H = opts.height || 650;
-  const primary = opts.primaryColor || "#00868C";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const nodes = opts.nodes || [];
   const edges = opts.edges || [];
@@ -483,16 +484,16 @@ function buildNetworkSvg(opts) {
       const cpX = midX + (-dy / len) * offset;
       const cpY = midY + (dx / len) * offset;
       svgContent += `<path d="M${x1},${y1} Q${cpX},${cpY} ${x2},${y2}" `
-        + `fill="none" stroke="#A8CFD1" stroke-width="1.8"${dashAttr}${markerAttr}/>`;
+        + `fill="none" stroke=SVG_COLORS.accent stroke-width="1.8"${dashAttr}${markerAttr}/>`;
     } else {
       svgContent += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" `
-        + `stroke="#A8CFD1" stroke-width="1.8"${dashAttr}${markerAttr}/>`;
+        + `stroke=SVG_COLORS.accent stroke-width="1.8"${dashAttr}${markerAttr}/>`;
     }
 
     // Edge label at midpoint
     if (edge.label) {
       const lx = (x1 + x2) / 2, ly = (y1 + y2) / 2 - 10;
-      svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" fill="#5B5D60" `
+      svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" fill=SVG_COLORS.textMuted `
         + `font-size="9" font-family="${font}">${edge.label}</text>`;
     }
   });
@@ -515,21 +516,21 @@ function buildNetworkSvg(opts) {
 
     // Label
     svgContent += `<text x="${node.x}" y="${node.y + (node.detail ? -4 : 4)}" text-anchor="middle" `
-      + `fill="#3F3F3F" font-size="${r > 40 ? 12 : 10}" font-weight="bold" font-family="${font}">${node.label}</text>`;
+      + `fill=SVG_COLORS.dark font-size="${r > 40 ? 12 : 10}" font-weight="bold" font-family="${font}">${node.label}</text>`;
 
     if (node.detail) {
       svgContent += `<text x="${node.x}" y="${node.y + 12}" text-anchor="middle" `
-        + `fill="#5B5D60" font-size="9" font-family="${font}">${node.detail}</text>`;
+        + `fill=SVG_COLORS.textMuted font-size="9" font-family="${font}">${node.detail}</text>`;
     }
   });
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
 <defs>
   <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#7F7F7F"/>
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.midGrey/>
   </marker>
   <marker id="arrow-rev" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto-start-reverse">
-    <polygon points="10 0, 0 3.5, 10 7" fill="#7F7F7F"/>
+    <polygon points="10 0, 0 3.5, 10 7" fill=SVG_COLORS.midGrey/>
   </marker>
   <filter id="shadow-md"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-opacity="0.12"/></filter>
 </defs>
@@ -551,20 +552,20 @@ Zentraler Knoten mit radialen Ästen, die sich in Unteräste verzweigen. Organis
  * @param {number} [opts.width=1100] - SVG viewBox width
  * @param {number} [opts.height=700] - SVG viewBox height
  * @param {object} opts.root - Root node: { label, children: [{ label, children?: [...] }] }
- * @param {string} [opts.primaryColor="#00868C"]
- * @param {Array} [opts.branchColors] - Color per branch; defaults to Capco teal palette cycle
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
+ * @param {Array} [opts.branchColors] - Color per branch; defaults to selected palette cycle
  * @returns {string} SVG markup
  */
 function buildMindmapSvg(opts) {
   const W = opts.width || 1100;
   const H = opts.height || 700;
-  const primary = opts.primaryColor || "#00868C";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const root = opts.root;
   if (!root) return '';
 
   const cx = W / 2, cy = H / 2;
-  const branchColors = opts.branchColors || ["#00868C", "#01B3BB", "#3F3F3F", "#7CB7BA", "#7F7F7F", "#A8CFD1"];
+  const branchColors = opts.branchColors || [SVG_COLORS.primary, SVG_COLORS.primaryLight, SVG_COLORS.dark, SVG_COLORS.primaryPale, SVG_COLORS.midGrey, SVG_COLORS.accent];
   const level1Radius = 190;  // distance center → level 1 nodes
   const level2Radius = 140;  // distance level 1 → level 2 nodes
 
@@ -619,7 +620,7 @@ function buildMindmapSvg(opts) {
       const subPillH = 26;
       svgContent += `<rect x="${sx - subPillW/2}" y="${sy - subPillH/2}" width="${subPillW}" height="${subPillH}" `
         + `rx="${subPillH/2}" fill="#FFFFFF" stroke="${color}" stroke-width="1.5"/>`;
-      svgContent += `<text x="${sx}" y="${sy + 4}" text-anchor="middle" fill="#3F3F3F" `
+      svgContent += `<text x="${sx}" y="${sy + 4}" text-anchor="middle" fill=SVG_COLORS.dark `
         + `font-size="9" font-weight="bold" font-family="${font}">${sub.label}</text>`;
     });
   });
@@ -659,15 +660,15 @@ Kreisförmige Anordnung von Phasen, verbunden durch gebogene Pfeile. Ideal für 
  * @param {Array} opts.phases - Array of { label: string, detail?: string, color?: string }
  * @param {string} [opts.centerLabel] - Optional text in the center
  * @param {string} [opts.centerDetail] - Optional subtitle in center
- * @param {string} [opts.primaryColor="#00868C"]
- * @param {string} [opts.arrowColor="#7F7F7F"]
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
+ * @param {string} [opts.arrowColor=SVG_COLORS.midGrey]
  * @returns {string} SVG markup
  */
 function buildCycleSvg(opts) {
   const W = opts.width || 700;
   const H = opts.height || 700;
-  const primary = opts.primaryColor || "#00868C";
-  const arrowColor = opts.arrowColor || "#7F7F7F";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
+  const arrowColor = opts.arrowColor || SVG_COLORS.midGrey;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const phases = opts.phases || [];
   const n = phases.length;
@@ -676,7 +677,7 @@ function buildCycleSvg(opts) {
   const cx = W / 2, cy = H / 2;
   const radius = Math.min(W, H) * 0.33;
   const nodeR = 42;
-  const colors = ["#00868C", "#01B3BB", "#3F3F3F", "#7CB7BA", "#7F7F7F", "#A8CFD1"];
+  const colors = [SVG_COLORS.primary, SVG_COLORS.primaryLight, SVG_COLORS.dark, SVG_COLORS.primaryPale, SVG_COLORS.midGrey, SVG_COLORS.accent];
 
   let svgContent = '';
 
@@ -730,18 +731,18 @@ function buildCycleSvg(opts) {
       const dx = cx + Math.cos(angle) * detailDist;
       const dy = cy + Math.sin(angle) * detailDist;
       svgContent += `<text x="${dx.toFixed(1)}" y="${dy.toFixed(1)}" text-anchor="middle" `
-        + `fill="#5B5D60" font-size="9" font-family="${font}">${phase.detail}</text>`;
+        + `fill=SVG_COLORS.textMuted font-size="9" font-family="${font}">${phase.detail}</text>`;
     }
   });
 
   // Center label
   if (opts.centerLabel) {
-    svgContent += `<circle cx="${cx}" cy="${cy}" r="38" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="1.5"/>`;
+    svgContent += `<circle cx="${cx}" cy="${cy}" r="38" fill="#FFFFFF" stroke=SVG_COLORS.border stroke-width="1.5"/>`;
     svgContent += `<text x="${cx}" y="${cy + (opts.centerDetail ? -3 : 5)}" text-anchor="middle" `
-      + `fill="#3F3F3F" font-size="12" font-weight="bold" font-family="${font}">${opts.centerLabel}</text>`;
+      + `fill=SVG_COLORS.dark font-size="12" font-weight="bold" font-family="${font}">${opts.centerLabel}</text>`;
     if (opts.centerDetail) {
       svgContent += `<text x="${cx}" y="${cy + 14}" text-anchor="middle" `
-        + `fill="#5B5D60" font-size="9" font-family="${font}">${opts.centerDetail}</text>`;
+        + `fill=SVG_COLORS.textMuted font-size="9" font-family="${font}">${opts.centerDetail}</text>`;
     }
   }
 
@@ -771,13 +772,13 @@ Verschachtelte Kreisringe von innen (Kern) nach außen. Jeder Ring hat ein Label
  * @param {number} [opts.height=700] - SVG viewBox height
  * @param {Array} opts.rings - Array from innermost to outermost:
  *   { label: string, detail?: string, color?: string }
- * @param {string} [opts.primaryColor="#00868C"]
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
  * @returns {string} SVG markup
  */
 function buildConcentricCirclesSvg(opts) {
   const W = opts.width || 700;
   const H = opts.height || 700;
-  const primary = opts.primaryColor || "#00868C";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const rings = opts.rings || [];
   const n = rings.length;
@@ -789,7 +790,7 @@ function buildConcentricCirclesSvg(opts) {
   const ringStep = (maxR - minR) / n;
 
   // Colors: dark center → light outside
-  const colorSteps = ["#00868C", "#01B3BB", "#7CB7BA", "#A8CFD1", "#9DC9CB", "#D8D8D8"];
+  const colorSteps = [SVG_COLORS.primary, SVG_COLORS.primaryLight, SVG_COLORS.primaryPale, SVG_COLORS.accent, SVG_COLORS.accentLight, SVG_COLORS.border];
 
   let svgContent = '';
 
@@ -818,10 +819,10 @@ function buildConcentricCirclesSvg(opts) {
       // Outer rings: label at top of band
       const ly = cy - labelR;
       svgContent += `<text x="${cx}" y="${ly + 5}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="11" font-weight="bold" font-family="${font}">${ring.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="11" font-weight="bold" font-family="${font}">${ring.label}</text>`;
       if (ring.detail) {
         svgContent += `<text x="${cx}" y="${ly + 19}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="9" font-family="${font}">${ring.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="9" font-family="${font}">${ring.detail}</text>`;
       }
     }
   }
@@ -872,15 +873,15 @@ Horizontaler Datenfluss von links nach rechts durch benannte **Zonen** — verti
  *     detail?: string, color?: string }
  * @param {Array} opts.edges - Array of { from, to, label?, style?: "solid"|"dashed" }
  *   label is typically a protocol, data format, or short description
- * @param {string} [opts.primaryColor="#00868C"]
- * @param {string} [opts.zoneBorderColor="#D8D8D8"]
+ * @param {string} [opts.primaryColor=SVG_COLORS.primary]
+ * @param {string} [opts.zoneBorderColor=SVG_COLORS.border]
  * @returns {string} Complete SVG markup
  */
 function buildArchitectureFlowSvg(opts) {
   const W = opts.width || 1300;
   const H = opts.height || 650;
-  const primary = opts.primaryColor || "#00868C";
-  const zoneBorderColor = opts.zoneBorderColor || "#D8D8D8";
+  const primary = opts.primaryColor || SVG_COLORS.primary;
+  const zoneBorderColor = opts.zoneBorderColor || SVG_COLORS.border;
   const font = 'Century Gothic, CenturyGothic, AppleGothic, sans-serif';
   const zones = opts.zones || [];
   const nodes = opts.nodes || [];
@@ -894,7 +895,7 @@ function buildArchitectureFlowSvg(opts) {
   const cylW = 110, cylH = 58, cylEllipseRy = 10;
 
   // Zone colors: alternating light backgrounds
-  const zoneColors = ["#F8FAFA", "#FFFFFF", "#F2F8F8", "#FFFFFF", "#F8F8FA", "#FFFFFF"];
+  const zoneColors = [SVG_COLORS.paleGrey, "#FFFFFF", SVG_COLORS.paleGrey, "#FFFFFF", SVG_COLORS.paleGrey, "#FFFFFF"];
 
   // Calculate zone widths (equal distribution)
   const totalGap = zoneGap * (zones.length - 1);
@@ -946,11 +947,11 @@ function buildArchitectureFlowSvg(opts) {
 
     // Zone header bar
     const headerColor = zi === 0 ? primary :
-                        zi === zones.length - 1 ? "#3F3F3F" :
+                        zi === zones.length - 1 ? SVG_COLORS.dark :
                         `${primary}${Math.round(200 - zi * 20).toString(16).padStart(2, '0')}`;
-    // Use solid teal-gradient headers
-    const tealShades = ["#00868C", "#01A3A8", "#01B3BB", "#3FBFC4", "#7CB7BA", "#3F3F3F"];
-    const hColor = tealShades[Math.min(zi, tealShades.length - 1)];
+    // Use solid accent-gradient headers
+    const accentShades = [SVG_COLORS.primary, SVG_COLORS.primaryLight, SVG_COLORS.primaryPale, SVG_COLORS.accent, SVG_COLORS.accentLight, SVG_COLORS.dark];
+    const hColor = accentShades[Math.min(zi, accentShades.length - 1)];
 
     svgContent += `<rect x="${zx}" y="0" width="${zoneW}" height="${headerH}" rx="6" fill="${hColor}"/>`;
     // Square off bottom corners of header
@@ -1011,11 +1012,11 @@ function buildArchitectureFlowSvg(opts) {
       // Smooth S-curve for cross-row connections
       const midX = (x1 + x2) / 2;
       svgContent += `<path d="M${x1},${y1} C${midX},${y1} ${midX},${y2} ${x2},${y2}" `
-        + `fill="none" stroke="#A8CFD1" stroke-width="1.8"${dashAttr} marker-end="url(#arrow-arch)"/>`;
+        + `fill="none" stroke=SVG_COLORS.accent stroke-width="1.8"${dashAttr} marker-end="url(#arrow-arch)"/>`;
     } else {
       // Straight line
       svgContent += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" `
-        + `stroke="#A8CFD1" stroke-width="1.8"${dashAttr} marker-end="url(#arrow-arch)"/>`;
+        + `stroke=SVG_COLORS.accent stroke-width="1.8"${dashAttr} marker-end="url(#arrow-arch)"/>`;
     }
 
     // Edge label (protocol/format)
@@ -1025,9 +1026,9 @@ function buildArchitectureFlowSvg(opts) {
       // Label background for readability
       const labelW = edge.label.length * 6.5 + 12;
       svgContent += `<rect x="${lx - labelW / 2}" y="${ly - 11}" width="${labelW}" height="16" `
-        + `rx="3" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="0.5" opacity="0.9"/>`;
+        + `rx="3" fill="#FFFFFF" stroke=SVG_COLORS.border stroke-width="0.5" opacity="0.9"/>`;
       svgContent += `<text x="${lx}" y="${ly}" text-anchor="middle" `
-        + `fill="#5B5D60" font-size="8" font-weight="bold" font-family="${font}">${edge.label}</text>`;
+        + `fill=SVG_COLORS.textMuted font-size="8" font-weight="bold" font-family="${font}">${edge.label}</text>`;
     }
   });
 
@@ -1062,10 +1063,10 @@ function buildArchitectureFlowSvg(opts) {
         + `fill="${color}" opacity="0.1"/>`;
       // Label
       svgContent += `<text x="${cx}" y="${cy + (node.detail ? -2 : 5)}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
         svgContent += `<text x="${cx}" y="${cy + 13}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="8" font-family="${font}">${node.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="8" font-family="${font}">${node.detail}</text>`;
       }
 
     } else if (type === "queue") {
@@ -1081,14 +1082,14 @@ function buildArchitectureFlowSvg(opts) {
           + `stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>`;
       }
       svgContent += `<text x="${cx + 10}" y="${cy + (node.detail ? -2 : 4)}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
         svgContent += `<text x="${cx + 10}" y="${cy + 13}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="8" font-family="${font}">${node.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="8" font-family="${font}">${node.detail}</text>`;
       }
 
     } else if (type === "api") {
-      // Teal filled rounded rect (API Gateway / Endpoint)
+      // Primary filled rounded rect (API Gateway / Endpoint)
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="${nodeW}" height="${nodeH}" `
         + `rx="10" fill="${color}" filter="url(#shadow-sm)"/>`;
       svgContent += `<text x="${cx}" y="${cy + (node.detail ? -3 : 5)}" text-anchor="middle" `
@@ -1100,7 +1101,7 @@ function buildArchitectureFlowSvg(opts) {
 
     } else if (type === "client") {
       // Rounded rect with grey accent (User / Dashboard / Consumer)
-      const clientColor = node.color || "#3F3F3F";
+      const clientColor = node.color || SVG_COLORS.dark;
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="${nodeW}" height="${nodeH}" `
         + `rx="10" fill="#FFFFFF" stroke="${clientColor}" stroke-width="1.8" filter="url(#shadow-sm)"/>`;
       // Top accent bar
@@ -1110,10 +1111,10 @@ function buildArchitectureFlowSvg(opts) {
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2 + 3}" width="${nodeW}" height="3" `
         + `fill="${clientColor}"/>`;
       svgContent += `<text x="${cx}" y="${cy + (node.detail ? 1 : 7)}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
         svgContent += `<text x="${cx}" y="${cy + 16}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="8" font-family="${font}">${node.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="8" font-family="${font}">${node.detail}</text>`;
       }
 
     } else if (type === "storage") {
@@ -1121,22 +1122,22 @@ function buildArchitectureFlowSvg(opts) {
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="${nodeW}" height="${nodeH}" `
         + `rx="6" fill="#FFFFFF" stroke="${color}" stroke-width="1.5" stroke-dasharray="5,3"/>`;
       svgContent += `<text x="${cx}" y="${cy + (node.detail ? -2 : 5)}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
         svgContent += `<text x="${cx}" y="${cy + 13}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="8" font-family="${font}">${node.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="8" font-family="${font}">${node.detail}</text>`;
       }
 
     } else {
       // Default: service — rectangle with left accent bar
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="${nodeW}" height="${nodeH}" `
-        + `rx="6" fill="#FFFFFF" stroke="#D8D8D8" stroke-width="1.2" filter="url(#shadow-sm)"/>`;
+        + `rx="6" fill="#FFFFFF" stroke=SVG_COLORS.border stroke-width="1.2" filter="url(#shadow-sm)"/>`;
       svgContent += `<rect x="${cx - nodeW / 2}" y="${cy - nodeH / 2}" width="5" height="${nodeH}" rx="2" fill="${color}"/>`;
       svgContent += `<text x="${cx + 4}" y="${cy + (node.detail ? -2 : 5)}" text-anchor="middle" `
-        + `fill="#3F3F3F" font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
+        + `fill=SVG_COLORS.dark font-size="10" font-weight="bold" font-family="${font}">${node.label}</text>`;
       if (node.detail) {
         svgContent += `<text x="${cx + 4}" y="${cy + 13}" text-anchor="middle" `
-          + `fill="#5B5D60" font-size="8" font-family="${font}">${node.detail}</text>`;
+          + `fill=SVG_COLORS.textMuted font-size="8" font-family="${font}">${node.detail}</text>`;
       }
     }
   });
@@ -1144,7 +1145,7 @@ function buildArchitectureFlowSvg(opts) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
 <defs>
   <marker id="arrow-arch" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-    <polygon points="0 0, 10 3.5, 0 7" fill="#7CB7BA"/>
+    <polygon points="0 0, 10 3.5, 0 7" fill=SVG_COLORS.primaryPale/>
   </marker>
   <filter id="shadow-sm"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.08"/></filter>
 </defs>
@@ -1183,9 +1184,9 @@ const svg = buildArchitectureFlowSvg({
     { id: "gw", label: "API Gateway", zone: "edge", row: 1, type: "api" },
     { id: "auth", label: "Auth Service", detail: "OAuth 2.0", zone: "app", row: 0, type: "service" },
     { id: "core", label: "Core API", detail: "Node.js", zone: "app", row: 1, type: "service" },
-    { id: "worker", label: "Async Worker", zone: "app", row: 2, type: "service", color: "#7F7F7F" },
+    { id: "worker", label: "Async Worker", zone: "app", row: 2, type: "service", color: SVG_COLORS.midGrey },
     { id: "db", label: "PostgreSQL", detail: "Primary", zone: "data", row: 0, type: "database" },
-    { id: "cache", label: "Redis", detail: "Cache", zone: "data", row: 1, type: "database", color: "#7F7F7F" },
+    { id: "cache", label: "Redis", detail: "Cache", zone: "data", row: 1, type: "database", color: SVG_COLORS.midGrey },
     { id: "queue", label: "SQS", detail: "Job Queue", zone: "data", row: 2, type: "queue" },
   ],
   edges: [
@@ -1223,7 +1224,7 @@ const svg = buildArchitectureFlowSvg({
     { id: "dwh", label: "Warehouse", detail: "Snowflake", zone: "store", row: 1, type: "database" },
     { id: "spark", label: "Spark", detail: "Transform", zone: "proc", row: 0, type: "service" },
     { id: "dash", label: "Dashboards", detail: "Power BI", zone: "serve", row: 0, type: "client" },
-    { id: "ml", label: "ML Platform", zone: "serve", row: 1, type: "service", color: "#01B3BB" },
+    { id: "ml", label: "ML Platform", zone: "serve", row: 1, type: "service", color: SVG_COLORS.primaryLight },
   ],
   edges: [
     { from: "erp", to: "kafka", label: "CDC" },
@@ -1243,7 +1244,7 @@ await addSvgDiagram(slide, pres, svg, { x: 0.3, y: 1.5, w: 12.73, h: 5.0 });
 
 ```javascript
 const slide = pres.addSlide();
-slide.background = { color: "FFFFFF" };
+slide.background = { color: palette.lightBg };
 addSlideHeader(slide, pres, "03", "PROCESS", "APPROVAL WORKFLOW",
   "End-to-end request approval flow");
 
@@ -1276,13 +1277,13 @@ await addSvgDiagram(slide, pres, svg, { x: 0.6, y: 1.5, w: 12.13, h: 5.5 });
 const svg = buildNetworkSvg({
   width: 1000, height: 600,
   nodes: [
-    { id: "gw", label: "API Gateway", x: 500, y: 60, size: "lg", color: "#00868C" },
+    { id: "gw", label: "API Gateway", x: 500, y: 60, size: "lg", color: SVG_COLORS.primary },
     { id: "auth", label: "Auth", detail: "OAuth 2.0", x: 200, y: 220 },
     { id: "user", label: "User Svc", detail: "CRUD", x: 500, y: 220 },
     { id: "order", label: "Order Svc", detail: "Processing", x: 800, y: 220 },
-    { id: "db1", label: "PostgreSQL", x: 350, y: 420, shape: "rect", color: "#3F3F3F" },
-    { id: "db2", label: "MongoDB", x: 650, y: 420, shape: "rect", color: "#3F3F3F" },
-    { id: "mq", label: "Kafka", x: 500, y: 540, shape: "rect", color: "#7F7F7F" },
+    { id: "db1", label: "PostgreSQL", x: 350, y: 420, shape: "rect", color: SVG_COLORS.dark },
+    { id: "db2", label: "MongoDB", x: 650, y: 420, shape: "rect", color: SVG_COLORS.dark },
+    { id: "mq", label: "Kafka", x: 500, y: 540, shape: "rect", color: SVG_COLORS.midGrey },
   ],
   edges: [
     { from: "gw", to: "auth", label: "JWT" },
@@ -1384,7 +1385,7 @@ await addSvgDiagram(slide, pres, svg, { x: 0.6, y: 1.5, w: 12.13, h: 5.5 });
 4. **NEVER rely on auto text-wrap** — SVG kann kein Auto-Wrap; lange Labels manuell mit `\n` oder `<tspan>` umbrechen
 5. **NEVER forget `xmlns`** — ohne `xmlns="http://www.w3.org/2000/svg"` kann `sharp` nicht konvertieren
 6. **NEVER use external fonts/images** — SVG muss standalone sein; Century Gothic als System-Font mit Fallbacks
-7. **NEVER mix SVG-Farben und PptxGenJS-Farben** — SVG nutzt `#00868C`, PptxGenJS nutzt `00868C` (ohne #)
+7. **NEVER mix SVG-Farben und PptxGenJS-Farben** — SVG nutzt `#`-Prefix (z.B. `#4472C4`), PptxGenJS nutzt ohne `#` (z.B. `4472C4`)
 8. **NEVER use font-size below 9** — wird auf Slides zu klein zum Lesen nach Konvertierung
 
 ---
@@ -1394,7 +1395,7 @@ await addSvgDiagram(slide, pres, svg, { x: 0.6, y: 1.5, w: 12.13, h: 5.5 });
 Dieser Skill liefert **7 SVG-Diagramm-Funktionen** + 1 Helper (`addSvgDiagram`) für die Diagrammtypen, die native PptxGenJS-Shapes nicht abbilden können. Jede Funktion:
 
 - Hat eine konsistente Signatur: `buildXxxSvg(opts)` → gibt SVG-String zurück
-- Verwendet die identische Capco Teal/Grau-Palette als Default
+- Verwendet die identische extern gewählte Farbpalette als Default
 - Nutzt Century Gothic als Font (mit System-Fallbacks)
 - Erzeugt transparente SVGs für nahtlose Slide-Integration
 - Berechnet Positionen dynamisch basierend auf der Knotenanzahl

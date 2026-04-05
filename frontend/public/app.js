@@ -2,129 +2,52 @@
   'use strict';
   const API = '/api';
 
-  const PALETTES = [
-    {
-      id: 'office',
-      name: 'Office',
+  const STYLES = [
+    { id: 'capco', name: 'Capco', font: 'Century Gothic',
+      colors: ['#00868C', '#00BFCB', '#B2CFD0', '#C00D0D', '#00B3BB', '#033C11'],
+      accent: '#00868C', accentHover: '#006D72', accentLight: '#D0E8E9' },
+    { id: 'mckinsey', name: 'McKinsey', font: 'Arial',
+      colors: ['#003A70', '#0091DA', '#62B5E5', '#E31B23', '#009A44', '#FFB81C'],
+      accent: '#003A70', accentHover: '#002A54', accentLight: '#C4D8E2' },
+    { id: 'office', name: 'Office', font: 'Calibri',
       colors: ['#4472C4', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5', '#70AD47'],
-      accent: '#4472C4',
-      accentHover: '#3A62A8',
-      accentLight: '#D6E4F0'
-    },
-    {
-      id: 'blue-warm',
-      name: 'Blue Warm',
+      accent: '#4472C4', accentHover: '#3A62A8', accentLight: '#D6E4F0' },
+    { id: 'blue-warm', name: 'Blue Warm', font: 'Segoe UI',
       colors: ['#4A66AC', '#629DD1', '#297FD5', '#7F8FA9', '#5AA2AE', '#9D90A0'],
-      accent: '#4A66AC',
-      accentHover: '#3D5691',
-      accentLight: '#D4DAE9'
-    },
-    {
-      id: 'blue',
-      name: 'Blue',
+      accent: '#4A66AC', accentHover: '#3D5691', accentLight: '#D4DAE9' },
+    { id: 'blue', name: 'Blue', font: 'Roboto',
       colors: ['#0F6FC6', '#009DD9', '#0BD0D9', '#10CF9B', '#7CCA62', '#A5C249'],
-      accent: '#0F6FC6',
-      accentHover: '#0C5DA6',
-      accentLight: '#CCE0F4'
-    },
-    {
-      id: 'blue-green',
-      name: 'Blue Green',
+      accent: '#0F6FC6', accentHover: '#0C5DA6', accentLight: '#CCE0F4' },
+    { id: 'blue-green', name: 'Blue Green', font: 'Open Sans',
       colors: ['#3494BA', '#58B6C0', '#75BDA7', '#7A8C8E', '#84ACB6', '#2683C6'],
-      accent: '#3494BA',
-      accentHover: '#2B7D9D',
-      accentLight: '#D0E6EF'
-    },
-    {
-      id: 'green',
-      name: 'Green',
+      accent: '#3494BA', accentHover: '#2B7D9D', accentLight: '#D0E6EF' },
+    { id: 'green', name: 'Green', font: 'Lato',
       colors: ['#549E39', '#8AB833', '#C0CF3A', '#029676', '#4AB5C4', '#0989B1'],
-      accent: '#549E39',
-      accentHover: '#47862F',
-      accentLight: '#D6EACE'
-    },
-    {
-      id: 'orange',
-      name: 'Orange',
+      accent: '#549E39', accentHover: '#47862F', accentLight: '#D6EACE' },
+    { id: 'orange', name: 'Orange', font: 'Montserrat',
       colors: ['#E48312', '#BD582C', '#865640', '#9B8357', '#C2BC80', '#94A088'],
-      accent: '#E48312',
-      accentHover: '#C4700F',
-      accentLight: '#F8E1BF'
-    },
-    {
-      id: 'red-orange',
-      name: 'Red Orange',
+      accent: '#E48312', accentHover: '#C4700F', accentLight: '#F8E1BF' },
+    { id: 'red-orange', name: 'Red Orange', font: 'Source Sans Pro',
       colors: ['#D34817', '#9B2D1F', '#A28E6A', '#956251', '#918485', '#855D5D'],
-      accent: '#D34817',
-      accentHover: '#B43D14',
-      accentLight: '#F4D1C4'
-    },
-    {
-      id: 'red',
-      name: 'Red',
+      accent: '#D34817', accentHover: '#B43D14', accentLight: '#F4D1C4' },
+    { id: 'red', name: 'Red', font: 'Poppins',
       colors: ['#A5300F', '#D55816', '#E19825', '#B19049', '#7F6C58', '#6B5B45'],
-      accent: '#A5300F',
-      accentHover: '#8C290D',
-      accentLight: '#EACCC5'
-    },
-    {
-      id: 'violet',
-      name: 'Violet',
+      accent: '#A5300F', accentHover: '#8C290D', accentLight: '#EACCC5' },
+    { id: 'violet', name: 'Violet', font: 'Raleway',
       colors: ['#AD84C6', '#8784C7', '#5D739A', '#6997AF', '#84ACB6', '#6F8183'],
-      accent: '#AD84C6',
-      accentHover: '#9A6FB6',
-      accentLight: '#E8DDF0'
-    },
-    {
-      id: 'grayscale',
-      name: 'Grayscale',
+      accent: '#AD84C6', accentHover: '#9A6FB6', accentLight: '#E8DDF0' },
+    { id: 'grayscale', name: 'Grayscale', font: 'Helvetica',
       colors: ['#595959', '#808080', '#999999', '#B2B2B2', '#CCCCCC', '#D9D9D9'],
-      accent: '#595959',
-      accentHover: '#404040',
-      accentLight: '#E8E8E8'
-    },
-    {
-      id: 'paper',
-      name: 'Paper',
+      accent: '#595959', accentHover: '#404040', accentLight: '#E8E8E8' },
+    { id: 'paper', name: 'Paper', font: 'Georgia',
       colors: ['#A5B592', '#F3A447', '#E7BC29', '#D092A7', '#9C85C0', '#809EC2'],
-      accent: '#A5B592',
-      accentHover: '#8FA17C',
-      accentLight: '#E4EBE0'
-    },
-    {
-      id: 'median',
-      name: 'Median',
+      accent: '#A5B592', accentHover: '#8FA17C', accentLight: '#E4EBE0' },
+    { id: 'median', name: 'Median', font: 'Inter',
       colors: ['#94B6D2', '#DD8047', '#A5AB81', '#D8B25C', '#7BA79D', '#968C8C'],
-      accent: '#94B6D2',
-      accentHover: '#7DA3C3',
-      accentLight: '#DDE8F1'
-    }
+      accent: '#94B6D2', accentHover: '#7DA3C3', accentLight: '#DDE8F1' },
   ];
 
   const DEFAULT_INSTRUCTIONS = `Use the provided Capco Slides skill as the authoritative style guide. Follow its layout patterns, header structure, typography, and color system precisely. Leverage the visual components and SVG diagram skills for rich, data-driven visualizations — never use standalone visuals without surrounding context. Prioritize information density, structured grids, and clear action titles on every slide.`;
-
-  const FONTS = [
-    { name: 'Calibri', desc: 'Modern sans-serif, Office default' },
-    { name: 'Arial', desc: 'Classic sans-serif, universal' },
-    { name: 'Helvetica', desc: 'Swiss precision, clean' },
-    { name: 'Century Gothic', desc: 'Geometric, consulting style' },
-    { name: 'Segoe UI', desc: 'Microsoft system font' },
-    { name: 'Roboto', desc: 'Google\'s versatile sans' },
-    { name: 'Open Sans', desc: 'Friendly, highly readable' },
-    { name: 'Lato', desc: 'Warm, professional' },
-    { name: 'Montserrat', desc: 'Bold geometric headers' },
-    { name: 'Poppins', desc: 'Geometric, modern feel' },
-    { name: 'Source Sans Pro', desc: 'Adobe\'s open sans-serif' },
-    { name: 'Nunito', desc: 'Rounded, approachable' },
-    { name: 'Raleway', desc: 'Elegant display font' },
-    { name: 'Georgia', desc: 'Classic serif, screen-optimized' },
-    { name: 'Garamond', desc: 'Traditional serif, print quality' },
-    { name: 'Times New Roman', desc: 'Academic serif standard' },
-    { name: 'Playfair Display', desc: 'High-contrast editorial serif' },
-    { name: 'Merriweather', desc: 'Serif designed for screens' },
-    { name: 'Inter', desc: 'UI-optimized variable font' },
-    { name: 'Work Sans', desc: 'Clean, optimized for body text' }
-  ];
 
   const state = {
     currentStep: 1,
@@ -148,9 +71,9 @@
     genSeconds: 0,
     timings: { analyze: 0, outline: 0, generate: 0, total: 0 },
     stepStartTime: null,
-    palette: 'office',
+    palette: 'capco',
     font: 'Calibri',
-    customizeColorsFont: false,
+    customizeColorsFont: true,
     lastStatusIdx: -1
   };
 
@@ -165,9 +88,6 @@
 
     // Load sidebar data in parallel
     Promise.all([loadStyles(), loadSkills(), loadOutputFiles()]);
-
-    // Render font selector
-    renderFontSelector();
 
     // Non-blocking CLI check — runs in background
     checkClaudeBackground();
@@ -214,19 +134,11 @@
       }
     }
 
-    var palette = localStorage.getItem('pptx-palette') || 'office';
+    var palette = localStorage.getItem('pptx-palette') || 'capco';
     state.palette = palette;
     applyPalette(palette);
 
-    var font = localStorage.getItem('pptx-font') || 'Calibri';
-    state.font = font;
-
-    var customize = localStorage.getItem('pptx-customize') === 'true';
-    state.customizeColorsFont = customize;
-    if ($('#customize-colors-font')) {
-      $('#customize-colors-font').checked = customize;
-      $('#customize-panel').classList.toggle('disabled', !customize);
-    }
+    state.customizeColorsFont = true;
 
     var instrEl = $('#default-instructions');
     function autoExpand() {
@@ -243,8 +155,6 @@
     var activeChip = $('.count-chip.active');
     localStorage.setItem('pptx-slide-target', activeChip ? activeChip.dataset.count : $('#slide-target').value);
     localStorage.setItem('pptx-palette', state.palette);
-    localStorage.setItem('pptx-font', state.font);
-    localStorage.setItem('pptx-customize', state.customizeColorsFont);
     toast('Settings saved', 'success');
   }
 
@@ -253,11 +163,12 @@
   }
 
   function applyPalette(id) {
-    var p = PALETTES.find(function (x) { return x.id === id; }) || PALETTES[0];
+    var p = STYLES.find(function (x) { return x.id === id; }) || STYLES[0];
     document.documentElement.style.setProperty('--accent', p.accent);
     document.documentElement.style.setProperty('--accent-hover', p.accentHover);
     document.documentElement.style.setProperty('--accent-light', p.accentLight);
     state.palette = id;
+    state.font = p.font;
     $$('.palette-row').forEach(function (d) {
       d.classList.toggle('active', d.dataset.palette === id);
     });
@@ -415,11 +326,6 @@
       else if (e.key === 'ArrowRight') $('#slide-modal-next').click();
     });
 
-    // Customize colors & font toggle
-    $('#customize-colors-font').addEventListener('change', function () {
-      state.customizeColorsFont = this.checked;
-      $('#customize-panel').classList.toggle('disabled', !this.checked);
-    });
 
     // CLI warning banner
     $('#cli-warning-retry').addEventListener('click', function () {
@@ -430,16 +336,6 @@
       $('#cli-warning').hidden = true;
     });
 
-    // Font selector
-    $('#font-trigger').addEventListener('click', function () {
-      var dd = $('#font-dropdown');
-      dd.hidden = !dd.hidden;
-      if (!dd.hidden) { $('#font-search').value = ''; renderFontOptions(''); $('#font-search').focus(); }
-    });
-    $('#font-search').addEventListener('input', function () { renderFontOptions(this.value); });
-    document.addEventListener('click', function (e) {
-      if (!$('#font-selector').contains(e.target)) $('#font-dropdown').hidden = true;
-    });
   }
 
   // === BACKGROUND CLI CHECK ===
@@ -527,36 +423,6 @@
     }
   }
 
-  // === FONT SELECTOR ===
-  function renderFontSelector() {
-    $('#font-selected-name').textContent = state.font;
-    $('#font-selected-name').style.fontFamily = "'" + state.font + "', sans-serif";
-    renderFontOptions('');
-  }
-
-  function renderFontOptions(filter) {
-    var container = $('#font-options');
-    var lowerFilter = filter.toLowerCase();
-    container.innerHTML = FONTS.filter(function (f) {
-      return !lowerFilter || f.name.toLowerCase().includes(lowerFilter) || f.desc.toLowerCase().includes(lowerFilter);
-    }).map(function (f) {
-      return '<div class="font-option ' + (state.font === f.name ? 'active' : '') + '" data-font="' + f.name + '" style="font-family:\'' + f.name + '\', sans-serif">' +
-        f.name + ' <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-ui)"> — ' + f.desc + '</span></div>';
-    }).join('');
-    container.querySelectorAll('.font-option').forEach(function (opt) {
-      opt.addEventListener('click', function () {
-        state.font = opt.dataset.font;
-        $('#font-selected-name').textContent = state.font;
-        $('#font-selected-name').style.fontFamily = "'" + state.font + "', sans-serif";
-        $('#font-dropdown').hidden = true;
-        container.querySelectorAll('.font-option').forEach(function (o) { o.classList.remove('active'); });
-        opt.classList.add('active');
-        if (state.currentStep === 4 && state.generatedFilename) {
-          promptStyleRevision('font changed to: ' + state.font);
-        }
-      });
-    });
-  }
 
   function renderSkills() {
     var container = $('#skills-list');
@@ -594,13 +460,16 @@
     // Render palette in separate container
     var paletteContainer = $('#palette-list');
     var paletteHtml = '<div class="palette-grid">';
-    PALETTES.forEach(function (p) {
+    STYLES.forEach(function (p) {
       var sw = p.colors.map(function (c) {
         return '<span style="width:14px;height:14px;background:' + c + ';display:inline-block"></span>';
       }).join('');
-      paletteHtml += '<div class="palette-row ' + (state.palette === p.id ? 'active' : '') + '" data-palette="' + p.id + '" title="' + p.name + '">' +
+      paletteHtml += '<div class="palette-row ' + (state.palette === p.id ? 'active' : '') + '" data-palette="' + p.id + '" title="' + p.name + ' \u2014 ' + p.font + '">' +
+        '<div class="palette-info">' +
+        '<span class="palette-name">' + p.name + '</span>' +
         '<span class="palette-swatches">' + sw + '</span>' +
-        '<span class="palette-name">' + p.name + '</span></div>';
+        '<span class="palette-font" style="font-family:\'' + p.font + '\', sans-serif">' + p.font + '</span>' +
+        '</div></div>';
     });
     paletteHtml += '</div>';
     paletteContainer.innerHTML = paletteHtml;
@@ -610,9 +479,11 @@
         paletteContainer.querySelectorAll('.palette-row').forEach(function (r) { r.classList.remove('active'); });
         row.classList.add('active');
         applyPalette(row.dataset.palette);
+        var selectedStyle = STYLES.find(function (s) { return s.id === row.dataset.palette; });
+        if (selectedStyle) state.font = selectedStyle.font;
         localStorage.setItem('pptx-palette', row.dataset.palette);
         if (state.currentStep === 4 && state.generatedFilename) {
-          promptStyleRevision('color palette changed to: ' + row.dataset.palette);
+          promptStyleRevision('style changed to: ' + row.dataset.palette + ' (' + state.font + ')');
         }
       });
     });
@@ -884,8 +755,9 @@
         '<span class="slide-number">' + slide.slideNumber + '</span>' +
         '<span class="drag-handle" title="Drag to reorder"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="4" r="1" fill="currentColor"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/></svg></span>' +
       '</div>' +
-      '<div class="slide-field"><label>Action Title</label><input type="text" class="action-title" value="' + escapeHtml(slide.actionTitle || '') + '" data-field="actionTitle"></div>' +
-      '<div class="slide-field"><label>Description</label><textarea data-field="description" rows="3">' + escapeHtml(slide.description || '') + '</textarea></div>' +
+      '<div class="slide-field"><label>Title</label><input type="text" class="action-title" value="' + escapeHtml(slide.actionTitle || '') + '" data-field="actionTitle"></div>' +
+      '<div class="slide-field"><label>Core Message</label><input type="text" class="core-message" value="' + escapeHtml(slide.coreMessage || '') + '" data-field="coreMessage"></div>' +
+      '<div class="slide-field"><label>Description</label><textarea class="slide-description" data-field="description" rows="2">' + escapeHtml(slide.description || '') + '</textarea></div>' +
       '<div class="slide-field"><label>Slide Type</label>' +
         '<div class="slide-type-radios">' +
           '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="standard" ' + ((!slide.slideType || slide.slideType === 'standard') ? 'checked' : '') + ' data-field="slideType"><span>Standard (Recommended)</span></label>' +
@@ -951,6 +823,7 @@
     state.slides.push({
       slideNumber: state.slides.length + 1,
       actionTitle: '',
+      coreMessage: '',
       description: '',
       slideType: 'standard',
       researchNeeded: false
@@ -1019,12 +892,9 @@
       defaultInstructions: $('#default-instructions').value
     };
 
-    // Only pass custom palette/font if user explicitly enabled customization
-    if (state.customizeColorsFont) {
-      var selectedPalette = PALETTES.find(function (p) { return p.id === state.palette; }) || PALETTES[0];
-      body.palette = { name: selectedPalette.name, colors: selectedPalette.colors };
-      body.font = state.font;
-    }
+    var selectedPalette = STYLES.find(function (p) { return p.id === state.palette; }) || STYLES[0];
+    body.palette = { name: selectedPalette.name, colors: selectedPalette.colors };
+    body.font = state.font;
 
     try {
       var response = await fetch(API + '/generate', {
