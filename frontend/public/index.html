@@ -33,6 +33,16 @@
           </div>
         </div>
         <div class="sidebar-section">
+          <label class="section-label">AI Provider</label>
+          <div class="provider-toggle" id="provider-toggle">
+            <span class="provider-label active" data-provider="claude">Claude</span>
+            <div class="toggle-switch" id="provider-switch">
+              <div class="toggle-knob"></div>
+            </div>
+            <span class="provider-label" data-provider="codex">Codex</span>
+          </div>
+        </div>
+        <div class="sidebar-section">
           <label class="section-label">Skills</label>
           <div id="skills-list" class="styles-list"></div>
         </div>
@@ -151,6 +161,18 @@
               <h2>Slide Outline</h2>
               <span class="slide-count" id="slide-count">0 slides</span>
             </div>
+            <!-- Agenda overview -->
+            <div class="agenda-box" id="agenda-box">
+              <div class="agenda-header">
+                <span class="agenda-label">Agenda</span>
+                <button class="agenda-copy" id="agenda-copy" title="Copy agenda">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M3 11V3h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <span>Copy</span>
+                </button>
+              </div>
+              <div class="agenda-list" id="agenda-list"></div>
+            </div>
+
             <!-- Analysis facts row -->
             <div class="analysis-facts" id="analysis-facts"></div>
 
@@ -261,18 +283,6 @@
           <!-- Vertical slide viewer (PDF-style) -->
           <div class="slide-viewer" id="slide-viewer">
             <div class="slide-viewer-loading">Loading slide previews...</div>
-          </div>
-
-          <!-- Revision Bar -->
-          <div class="revision-bar" id="revision-bar">
-            <textarea id="revision-global" class="content-textarea" rows="3" placeholder="General revision instructions (or use per-slide notes above)..."></textarea>
-            <div class="revision-bar-actions">
-              <span class="revision-bar-hint" id="revision-bar-hint"></span>
-              <button id="btn-revise" class="btn btn-primary btn-lg">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 15l3-1 9-9-2-2-9 9-1 3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Revise Presentation
-              </button>
-            </div>
           </div>
 
           <!-- QA Wizard Section -->

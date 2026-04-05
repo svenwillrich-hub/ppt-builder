@@ -8,6 +8,7 @@ const ClaudeRunner = require('./lib/claudeRunner');
 const PromptBuilder = require('./lib/promptBuilder');
 const ParallelRunner = require('./lib/parallelRunner');
 const PptxMerger = require('./lib/pptxMerger');
+const { getRunner } = require('./lib/runnerFactory');
 
 const app = express();
 const PORT = 3001;
@@ -270,8 +271,9 @@ app.get('/api/preview/:filename', async (req, res) => {
 
 // --- Visual QA ---
 app.post('/api/qa', (req, res) => {
-  const { filename, slides, styles } = req.body;
+  const { filename, slides, styles, provider } = req.body;
   if (!filename) return res.status(400).json({ error: 'No filename provided' });
+  const Runner = getRunner(provider);
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -291,7 +293,7 @@ app.post('/api/qa', (req, res) => {
 
   const prompt = PromptBuilder.buildQAPrompt({ filename, slides, styles, previewPaths });
 
-  ClaudeRunner.run(prompt, res, {
+  Runner.run(prompt, res, {
     onComplete: (output) => {
       // Extract text content from stream-json
       let textContent = '';
@@ -361,11 +363,13 @@ app.get('/api/preview-image/:dir/:file', (req, res) => {
 
 // --- Step 2: Analyze content ---
 app.post('/api/analyze', (req, res) => {
-  const { content, language, styles, uploadedFiles, defaultInstructions } = req.body;
+  const { content, language, styles, uploadedFiles, defaultInstructions, provider } = req.body;
 
   if (!content && (!uploadedFiles || uploadedFiles.length === 0)) {
     return res.status(400).json({ error: 'No content or files provided' });
   }
+
+  const Runner = getRunner(provider);
 
   // Set up SSE
   res.setHeader('Content-Type', 'text/event-stream');
@@ -380,7 +384,7 @@ app.post('/api/analyze', (req, res) => {
 
   let fullOutput = '';
 
-  ClaudeRunner.run(prompt, res, {
+  Runner.run(prompt, res, {
     onLine: (line) => {
       fullOutput += line + '\n';
     },
@@ -442,9 +446,9 @@ app.post('/api/analyze', (req, res) => {
   });
 });
 
-// --- Step 4: Generate PPTX (Parallel — one Claude session per slide) ---
+// --- Step 4: Generate PPTX (Parallel — one AI session per slide) ---
 app.post('/api/generate', async (req, res) => {
-  const { slides, language, styles, uploadedFiles, defaultInstructions } = req.body;
+  const { slides, language, styles, uploadedFiles, defaultInstructions, provider } = req.body;
 
   if (!slides || slides.length === 0) {
     return res.status(400).json({ error: 'No slides provided' });
@@ -489,7 +493,7 @@ app.post('/api/generate', async (req, res) => {
   });
 
   try {
-    const { completedFiles, failed, children } = await ParallelRunner.run(slideJobs, res);
+    const { completedFiles, failed, children } = await ParallelRunner.run(slideJobs, res, provider);
     activeProcesses.set(requestId, children);
 
     if (completedFiles.length === 0) {
@@ -530,9 +534,41 @@ app.post('/api/generate', async (req, res) => {
   });
 });
 
+// --- Suggest visual components per slide ---
+app.post('/api/suggest-visuals', async (req, res) => {
+  const { slides, provider } = req.body;
+  if (!slides || slides.length === 0) {
+    return res.status(400).json({ error: 'No slides provided' });
+  }
+
+  const Runner = getRunner(provider);
+  const prompt = PromptBuilder.buildVisualSuggestPrompt(slides);
+
+  try {
+    const output = await Runner.runCollect(prompt);
+    // Extract JSON from output
+    let json = null;
+    const jsonMatch = output.match(/```json\s*([\s\S]*?)```/) || output.match(/(\{[\s\S]*\})/);
+    if (jsonMatch) {
+      try { json = JSON.parse(jsonMatch[1]); } catch (e) { /* try full output */ }
+    }
+    if (!json) {
+      try { json = JSON.parse(output.trim()); } catch (e) { /* fallback */ }
+    }
+    if (json) {
+      res.json({ suggestions: json });
+    } else {
+      res.status(500).json({ error: 'Could not parse suggestions', raw: output.slice(0, 500) });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Enhance single slide ---
 app.post('/api/enhance', (req, res) => {
-  const { filename, slideNumber, language, styles, palette, font } = req.body;
+  const { filename, slideNumber, language, styles, palette, font, provider, reviseInstructions } = req.body;
+  const Runner = getRunner(provider);
 
   if (!filename || !slideNumber) {
     return res.status(400).json({ error: 'Filename and slideNumber are required' });
@@ -547,14 +583,23 @@ app.post('/api/enhance', (req, res) => {
   const timestamp = Date.now();
   const outputPath = `/app/outputs/.tmp-enhance-${timestamp}-slide-${slideNumber}.pptx`;
 
-  const prompt = PromptBuilder.buildEnhancePrompt({
-    filename, slideNumber, language, styles, palette, font, outputPath
-  });
+  let prompt;
+  if (reviseInstructions) {
+    // Per-slide revision with specific instructions
+    prompt = PromptBuilder.buildSlideRevisePrompt({
+      filename, slideNumber, instructions: reviseInstructions, language, styles, palette, font, outputPath
+    });
+  } else {
+    // Generic enhance (improve visual quality)
+    prompt = PromptBuilder.buildEnhancePrompt({
+      filename, slideNumber, language, styles, palette, font, outputPath
+    });
+  }
 
   const requestId = `enhance-${slideNumber}-${timestamp}`;
   ClaudeRunner.sendSSE(res, { type: 'enhance_started', slideNumber });
 
-  const child = ClaudeRunner.run(prompt, res, {
+  const child = Runner.run(prompt, res, {
     onComplete: async (output) => {
       if (fs.existsSync(outputPath)) {
         // Replace the slide in the main PPTX
@@ -654,7 +699,8 @@ print("Slide ${slideNumber} replaced successfully")
 
 // --- Step 6: Revise PPTX ---
 app.post('/api/revise', (req, res) => {
-  const { filename, instructions, language, styles, uploadedFiles, revisionNumber } = req.body;
+  const { filename, instructions, language, styles, uploadedFiles, revisionNumber, provider } = req.body;
+  const Runner = getRunner(provider);
 
   if (!filename || !instructions) {
     return res.status(400).json({ error: 'Filename and instructions are required' });
@@ -677,7 +723,7 @@ app.post('/api/revise', (req, res) => {
   const revStartTime = Date.now();
 
   const requestId = Date.now().toString();
-  const child = ClaudeRunner.run(prompt, res, {
+  const child = Runner.run(prompt, res, {
     onComplete: async (output) => {
       let newFile = await findNewPptxFile(existingFilesRevise, revStartTime);
       if (!newFile) {

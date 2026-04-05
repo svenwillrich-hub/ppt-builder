@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const ClaudeRunner = require('./claudeRunner');
+const { getRunner } = require('./runnerFactory');
 
 class ParallelRunner {
   /**
@@ -10,12 +11,13 @@ class ParallelRunner {
    * All slides start simultaneously — no batching.
    * @param {Array<{slideNumber: number, prompt: string, outputPath: string}>} slideJobs
    * @param {object} res - SSE response object
+   * @param {string} provider - 'claude' or 'codex'
    * @returns {Promise<{completedFiles: Array, failed: number[], children: Array}>}
    */
-  static async run(slideJobs, res) {
+  static async run(slideJobs, res, provider) {
     const children = [];
 
-    const promises = slideJobs.map(job => this._runSingleSlide(job, res, children));
+    const promises = slideJobs.map(job => this._runSingleSlide(job, res, children, provider));
     const results = await Promise.allSettled(promises);
 
     const completedFiles = [];
@@ -37,18 +39,22 @@ class ParallelRunner {
    * Run a single Claude CLI process for one slide.
    * On completion, generates a PNG preview and sends it via SSE.
    */
-  static _runSingleSlide(job, res, childrenArray) {
+  static _runSingleSlide(job, res, childrenArray, provider) {
     return new Promise((resolve, reject) => {
       const { slideNumber, prompt, outputPath } = job;
-      const tmpFile = path.join(os.tmpdir(), `claude-slide-${Date.now()}-${slideNumber}.txt`);
+      const Runner = getRunner(provider);
+      const prefix = provider === 'codex' ? 'codex' : 'claude';
+      const tmpFile = path.join(os.tmpdir(), `${prefix}-slide-${Date.now()}-${slideNumber}.txt`);
       fs.writeFileSync(tmpFile, prompt, 'utf-8');
 
       const promptSize = Buffer.byteLength(prompt, 'utf-8');
-      console.log(`[parallel] Slide ${slideNumber} — prompt size: ${(promptSize / 1024).toFixed(1)} KB`);
+      console.log(`[parallel] Slide ${slideNumber} — ${prefix} — prompt size: ${(promptSize / 1024).toFixed(1)} KB`);
 
       ClaudeRunner.sendSSE(res, { type: 'slide_started', slideNumber });
 
-      const shellCmd = `claude --dangerously-skip-permissions --output-format stream-json --verbose -p - < "${tmpFile}"`;
+      const shellCmd = provider === 'codex'
+        ? `codex exec --sandbox full-auto --json -p - < "${tmpFile}"`
+        : `claude --dangerously-skip-permissions --output-format stream-json --verbose -p - < "${tmpFile}"`;
       const child = spawn('sh', ['-c', shellCmd], {
         env: process.env,
         cwd: '/app',

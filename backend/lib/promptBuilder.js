@@ -89,11 +89,18 @@ Return ONLY a valid JSON array with this structure for each slide:
     "slideNumber": 1,
     "actionTitle": "Bold, concise slide title",
     "coreMessage": "One sentence explaining the key takeaway and how this slide fits into the overall storyline",
-    "description": "Three sentences providing more detailed context. What specific content, data, or arguments belong on this slide. What visual approach or layout would best communicate the message.",
-    "slideType": "standard",
+    "description": "- Key argument or fact this slide establishes\\n- Supporting evidence or data point\\n- How this connects to the next slide in the storyline",
     "researchNeeded": false
   }
 ]
+
+IMPORTANT for the description field:
+- Exactly 3 bullet points, each starting with "- "
+- Pure content only: facts, arguments, data, storyline connections
+- Do NOT mention visual layout, design, charts, or how to display anything
+- Focus on WHAT the slide says, not HOW it looks
+- Each bullet should be one concise sentence
+
 Do not include any text outside the JSON array.`;
   }
 
@@ -476,6 +483,119 @@ After creating the PPTX file, ALWAYS run:
 \`\`\`
 python3 -c "from pptx import Presentation; p = Presentation('${outputPath}'); p.save('${outputPath}')"
 \`\`\``;
+  }
+
+  static buildSlideRevisePrompt({ filename, slideNumber, instructions, language, styles, palette, font, outputPath }) {
+    const styleInstructions = this.getStyleInstructions(styles || []);
+    const skillContents = this.getSkillContents();
+    const paletteBlock = this.buildPaletteBlock(palette, font);
+
+    return `You are a presentation editor. Revise a single slide based on specific instructions.
+
+## CRITICAL: Environment Info
+- Node.js 20 with pptxgenjs PRE-INSTALLED at /app/node_modules/pptxgenjs
+- Python 3.11 with python-pptx and Pillow PRE-INSTALLED
+- Do NOT install anything — all dependencies are ready
+- Write scripts to /tmp/ and execute from there
+
+Language: ${language || 'english'}
+Existing file: /app/outputs/${filename}
+Slide to revise: Slide ${slideNumber}
+
+## Color & Typography Customization
+${paletteBlock}
+
+## Style Guidelines
+${styleInstructions}
+
+## Skill References
+${skillContents}
+
+## Revision Instructions
+${instructions}
+
+## Task
+1. Read the existing PPTX at /app/outputs/${filename}
+2. Extract slide ${slideNumber}'s current content
+3. Apply the revision instructions above to recreate the slide
+4. Create a new single-slide PPTX with the revised design
+5. Save to: ${outputPath}
+6. Print: SLIDE_COMPLETE::${slideNumber}
+
+## Layout Quality Checks
+- No overlapping elements
+- Nothing outside slide boundaries (13.33" x 7.5")
+- Use at least 70% of slide area
+- Text must fit inside containers
+- Consistent margins (min 0.4" from edges)
+
+## CRITICAL: Post-Generation Validation
+\`\`\`
+python3 -c "from pptx import Presentation; p = Presentation('${outputPath}'); p.save('${outputPath}')"
+\`\`\``;
+  }
+
+  static buildVisualSuggestPrompt(slides) {
+    const slideList = slides.map(s =>
+      `Slide ${s.slideNumber}: "${s.actionTitle}" — ${s.coreMessage || s.description || ''}`
+    ).join('\n');
+
+    return `You are a presentation visualization expert. For each slide below, suggest the Top 5 visual component types that would best communicate the slide's core message.
+
+## Available Visual Components
+
+**Native PptxGenJS Components (capco-visual-components skill):**
+- donut-kpi: Circular progress rings for KPI dashboards (percentages, scores, completion rates)
+- progress-bars: Horizontal bars for tracking multiple metrics or comparing values
+- vs-comparison: Side-by-side bar comparison for two options/scenarios
+- number-callouts: Large prominent numbers for key financial or statistical highlights
+- status-dashboard: Multi-chart composite panel for operational status overviews
+- staircase: Ascending steps for maturity models, roadmaps, or progression phases
+- chevron-process: Horizontal arrow chain for linear processes or workflows
+- pyramid: Layered triangle for hierarchies, maturity levels, or prioritization
+- swot: 4-quadrant strategic analysis layout
+- venn-circles: Overlapping circles for showing relationships and intersections
+- pentagon-strategy: 5-factor circular arrangement for strategic frameworks
+- timeline-horizontal: Left-to-right timeline for milestones or chronological events
+- timeline-vertical: Top-to-bottom timeline with KPI markers
+- funnel-ranking: Progressively wider bars for funnel stages or ranked items
+- quadrant-2x2: 4 blocks in matrix layout for categorization or prioritization
+- icon-card-grid: Card grid with icons for feature lists or capability overviews
+- callout-bubbles: Prominent colored bubbles for highlighting key metrics
+- org-chart: Hierarchical tree for organizational or team structures
+- layer-stack: Horizontal layers for technology stacks or architecture tiers
+- native-chart: Standard bar/line/pie/doughnut charts for data visualization
+
+**SVG Diagrams (capco-svg-diagrams skill):**
+- flowchart: Decision flows with process boxes, diamonds, and arrows
+- swimlane: Responsibility lanes with cross-lane process flows
+- network-graph: Freely connected nodes for system architectures or landscapes
+- mindmap: Radial branching from central concept for brainstorming or topic exploration
+- cycle-diagram: Circular phases for iterative processes (PDCA, sprints, DevOps)
+- concentric-circles: Nested rings for layered models (onion diagrams)
+- architecture-flow: Zoned left-to-right data flow for system architecture
+
+## Slides to Analyze
+${slideList}
+
+## Instructions
+For EACH slide, return your Top 5 suggestions. Consider:
+- What data/concepts does the slide communicate?
+- Which visual best reinforces the core message?
+- Variety — don't suggest the same component for every slide
+
+Return ONLY a valid JSON object with this structure:
+\`\`\`json
+{
+  "1": [
+    { "id": "component-id", "name": "Human Readable Name", "reason": "Why this fits" },
+    ...4 more
+  ],
+  "2": [ ...5 suggestions... ],
+  ...
+}
+\`\`\`
+Keys are slide numbers as strings. Do not include any text outside the JSON.`;
   }
 }
 

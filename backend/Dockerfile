@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install python-pptx and pdf2image for slide rendering
 RUN pip3 install --break-system-packages python-pptx Pillow pdf2image
 
-# Install Claude Code CLI
-RUN npm install -g @anthropic-ai/claude-code
+# Install AI CLIs (Claude Code + OpenAI Codex)
+RUN npm install -g @anthropic-ai/claude-code @openai/codex
 
 WORKDIR /app
 

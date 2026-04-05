@@ -58,6 +58,7 @@
     uploadedFiles: [],
     slides: [],
     slideComments: {},
+    slideVisuals: {},
     generatedFilename: null,
     revisions: [],
     revisionCount: 0,
@@ -73,6 +74,7 @@
     stepStartTime: null,
     palette: 'capco',
     font: 'Calibri',
+    provider: 'claude',
     customizeColorsFont: true,
     lastStatusIdx: -1
   };
@@ -138,6 +140,10 @@
     state.palette = palette;
     applyPalette(palette);
 
+    var provider = localStorage.getItem('pptx-provider') || 'claude';
+    state.provider = provider;
+    applyProvider(provider);
+
     state.customizeColorsFont = true;
 
     var instrEl = $('#default-instructions');
@@ -174,6 +180,16 @@
     });
   }
 
+  function applyProvider(id) {
+    state.provider = id;
+    var isCodex = id === 'codex';
+    var toggle = $('#provider-switch');
+    if (toggle) toggle.classList.toggle('active', isCodex);
+    $$('.provider-label').forEach(function (l) {
+      l.classList.toggle('active', l.dataset.provider === id);
+    });
+  }
+
   // === EVENTS ===
   function bindEvents() {
     // Sidebar
@@ -195,6 +211,13 @@
       });
     });
 
+    // AI Provider toggle
+    $('#provider-switch').addEventListener('click', function () {
+      var newProvider = state.provider === 'claude' ? 'codex' : 'claude';
+      applyProvider(newProvider);
+      localStorage.setItem('pptx-provider', newProvider);
+    });
+
     // Save
     $('#save-settings').addEventListener('click', saveSettings);
 
@@ -204,9 +227,8 @@
     // Sidebar update button
     $('#btn-sidebar-update').addEventListener('click', handleSidebarUpdate);
 
-    // Revision bar on Result page
-    $('#btn-revise').addEventListener('click', handleReviseClick);
-    $('#revision-global').addEventListener('input', updateRevisionHint);
+    // Agenda copy button
+    $('#agenda-copy').addEventListener('click', copyAgenda);
 
     // Step navigation (clickable completed steps)
     $$('.step-indicator .step').forEach(function (el) {
@@ -299,6 +321,7 @@
       state.uploadedFiles = [];
       state.slidePreviewUrls = [];
       state.slideComments = {};
+      state.slideVisuals = {};
       state.highestStep = 1;
       state.timings = { analyze: 0, outline: 0, generate: 0, total: 0 };
       $('#content-input').value = '';
@@ -542,29 +565,8 @@
     startRevision();
   }
 
-  function handleReviseClick() {
-    var globalInstr = ($('#revision-global').value || '').trim();
-    var slideNotes = Object.entries(state.slideComments)
-      .filter(function (entry) { return entry[1] && entry[1].trim(); })
-      .map(function (entry) { return '- Slide ' + entry[0] + ': ' + entry[1].trim(); })
-      .join('\n');
-    var instructions = [globalInstr, slideNotes].filter(Boolean).join('\n\n## Per-slide notes:\n');
-    if (!instructions.trim()) {
-      toast('Please add revision notes (general or per-slide)', 'warning');
-      return;
-    }
-    state.refineInstructions = instructions;
-    $('#revision-global').value = '';
-    startRevision();
-  }
-
   function updateRevisionHint() {
-    var noteCount = Object.values(state.slideComments).filter(function (v) { return v && v.trim(); }).length;
-    var hasGlobal = ($('#revision-global').value || '').trim().length > 0;
-    var parts = [];
-    if (noteCount > 0) parts.push(noteCount + ' slide note' + (noteCount !== 1 ? 's' : ''));
-    if (hasGlobal) parts.push('instructions');
-    $('#revision-bar-hint').textContent = parts.length > 0 ? parts.join(' + ') : '';
+    // No-op — kept for compatibility with visual select change handler
   }
 
   // === TIMERS ===
@@ -658,7 +660,8 @@
       language: state.language,
       styles: getEnabledStyles(),
       uploadedFiles: state.uploadedFiles.map(function (f) { return f.storedName; }),
-      defaultInstructions: instructions + '\n\nTarget approximately ' + slideTarget + ' slides.'
+      defaultInstructions: instructions + '\n\nTarget approximately ' + slideTarget + ' slides.',
+      provider: state.provider
     };
 
     var lineCount = 0;
@@ -742,7 +745,30 @@
       grid.appendChild(createSlideCard(slide, index));
     });
     $('#slide-count').textContent = state.slides.length + ' slides';
+    renderAgenda();
     setupDragAndDrop();
+  }
+
+  function renderAgenda() {
+    var list = $('#agenda-list');
+    if (!list) return;
+    list.innerHTML = state.slides.map(function (s, i) {
+      return '<div class="agenda-item"><span class="agenda-num">Slide ' + (i + 1) + ':</span> ' + escapeHtml(s.actionTitle || 'Untitled') + '</div>';
+    }).join('');
+  }
+
+  function copyAgenda() {
+    var text = state.slides.map(function (s, i) {
+      return 'Slide ' + (i + 1) + ': ' + (s.actionTitle || 'Untitled');
+    }).join('\n');
+    navigator.clipboard.writeText(text).then(function () {
+      toast('Agenda copied!', 'success');
+      var btn = $('#agenda-copy');
+      if (btn) {
+        btn.querySelector('span').textContent = 'Copied!';
+        setTimeout(function () { btn.querySelector('span').textContent = 'Copy'; }, 2000);
+      }
+    });
   }
 
   function createSlideCard(slide, index) {
@@ -758,13 +784,6 @@
       '<div class="slide-field"><label>Title</label><input type="text" class="action-title" value="' + escapeHtml(slide.actionTitle || '') + '" data-field="actionTitle"></div>' +
       '<div class="slide-field"><label>Core Message</label><input type="text" class="core-message" value="' + escapeHtml(slide.coreMessage || '') + '" data-field="coreMessage"></div>' +
       '<div class="slide-field"><label>Description</label><textarea class="slide-description" data-field="description" rows="2">' + escapeHtml(slide.description || '') + '</textarea></div>' +
-      '<div class="slide-field"><label>Slide Type</label>' +
-        '<div class="slide-type-radios">' +
-          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="standard" ' + ((!slide.slideType || slide.slideType === 'standard') ? 'checked' : '') + ' data-field="slideType"><span>Standard (Recommended)</span></label>' +
-          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="visual-components" ' + (slide.slideType === 'visual-components' ? 'checked' : '') + ' data-field="slideType"><span>Slide with visual components</span></label>' +
-          '<label class="slide-type-option"><input type="radio" name="slideType-' + index + '" value="complex-visual" ' + (slide.slideType === 'complex-visual' ? 'checked' : '') + ' data-field="slideType"><span>Complex visual component (layered architecture, flow architecture)</span></label>' +
-        '</div>' +
-      '</div>' +
       '<div class="slide-card-footer">' +
         '<label class="research-toggle"><input type="checkbox" data-field="researchNeeded" ' + (slide.researchNeeded ? 'checked' : '') + '> Research</label>' +
         '<div class="slide-card-actions">' +
@@ -777,6 +796,7 @@
     card.querySelectorAll('input[type="text"], textarea').forEach(function (input) {
       input.addEventListener('input', function () {
         state.slides[index][input.dataset.field] = input.value;
+        if (input.dataset.field === 'actionTitle') renderAgenda();
         if (input.tagName === 'TEXTAREA') {
           input.style.height = 'auto';
           input.style.height = input.scrollHeight + 'px';
@@ -825,7 +845,6 @@
       actionTitle: '',
       coreMessage: '',
       description: '',
-      slideType: 'standard',
       researchNeeded: false
     });
     renderSlideOutline();
@@ -877,7 +896,7 @@
     $('#gen-actions-done').hidden = true;
     $('#gen-status-banner').className = 'gen-status-banner';
     $('#gen-status-text').textContent = 'Generating presentation...';
-    $('#gen-status-detail').textContent = 'Connecting to Claude';
+    $('#gen-status-detail').textContent = 'Connecting to ' + (state.provider === 'codex' ? 'Codex' : 'Claude');
     $('#gen-status-icon').innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div>';
     state.genLastLogTime = Date.now();
     var logEl = $('#gen-log');
@@ -895,6 +914,7 @@
     var selectedPalette = STYLES.find(function (p) { return p.id === state.palette; }) || STYLES[0];
     body.palette = { name: selectedPalette.name, colors: selectedPalette.colors };
     body.font = state.font;
+    body.provider = state.provider;
 
     try {
       var response = await fetch(API + '/generate', {
@@ -1093,6 +1113,7 @@
   function renderResult() {
     if (!state.generatedFilename) return;
     state.slideComments = {};
+    state.slideVisuals = {};
     $('#preview-file-name').textContent = state.generatedFilename;
     $('#preview-file-meta').textContent = state.slides.length + ' slides';
     $('#output-hint').textContent = './outputs/' + state.generatedFilename;
@@ -1129,10 +1150,20 @@
               '<span class="slide-viewer-title">' + escapeHtml(slide.actionTitle || 'Slide ' + (i + 1)) + '</span>' +
             '</div>' +
             '<div class="slide-viewer-actions">' +
-              '<textarea class="slide-viewer-comment" data-slide="' + (i + 1) + '" placeholder="Revision note for this slide..."></textarea>' +
-              '<button class="btn-enhance" data-slide="' + (i + 1) + '" title="Enhance this slide">' +
-                '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11 6.5 7.5 3 6l3.5-1.5L8 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 10l.75 1.75L14.5 12.5l-1.75.75L12 15l-.75-1.75L9.5 12.5l1.75-.75L12 10z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>' +
-              '</button>' +
+              '<div class="slide-visual-select-wrap">' +
+                '<select class="slide-visual-select" data-slide="' + (i + 1) + '">' +
+                  '<option value="">Visual suggestion loading...</option>' +
+                '</select>' +
+              '</div>' +
+              '<div class="slide-viewer-actions-row">' +
+                '<textarea class="slide-viewer-comment" data-slide="' + (i + 1) + '" placeholder="Revision note for this slide..."></textarea>' +
+                '<button class="btn-slide-revise" data-slide="' + (i + 1) + '" title="Revise this slide">' +
+                  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 13l2.5-.7 7.5-7.5-1.8-1.8-7.5 7.5L3 13z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+                '</button>' +
+                '<button class="btn-enhance" data-slide="' + (i + 1) + '" title="Enhance this slide">' +
+                  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11 6.5 7.5 3 6l3.5-1.5L8 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 10l.75 1.75L14.5 12.5l-1.75.75L12 15l-.75-1.75L9.5 12.5l1.75-.75L12 10z" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>' +
+                '</button>' +
+              '</div>' +
             '</div>' +
           '</div>';
         }).join('');
@@ -1155,12 +1186,66 @@
             enhanceSlide(parseInt(btn.dataset.slide));
           });
         });
+
+        viewer.querySelectorAll('.btn-slide-revise').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            reviseSlide(parseInt(btn.dataset.slide));
+          });
+        });
+
+        viewer.querySelectorAll('.slide-visual-select').forEach(function (sel) {
+          sel.addEventListener('change', function () {
+            state.slideVisuals[sel.dataset.slide] = sel.value;
+            updateRevisionHint();
+          });
+        });
+
+        // Fetch visual suggestions
+        fetchVisualSuggestions();
       } else {
         viewer.innerHTML = '<div class="slide-viewer-loading">Preview not available</div>';
       }
     } catch (e) {
       viewer.innerHTML = '<div class="slide-viewer-loading">Preview rendering failed</div>';
     }
+  }
+
+  // === VISUAL SUGGESTIONS ===
+  async function fetchVisualSuggestions() {
+    try {
+      var res = await fetch(API + '/suggest-visuals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slides: state.slides, provider: state.provider })
+      });
+      var data = await res.json();
+      if (data.suggestions) {
+        populateVisualDropdowns(data.suggestions);
+      }
+    } catch (e) {
+      console.log('[visuals] Suggestion fetch failed:', e.message);
+      // Set dropdowns to fallback
+      $$('.slide-visual-select').forEach(function (sel) {
+        sel.innerHTML = '<option value="">No suggestions available</option>';
+      });
+    }
+  }
+
+  function populateVisualDropdowns(suggestions) {
+    $$('.slide-visual-select').forEach(function (sel) {
+      var slideNum = sel.dataset.slide;
+      var items = suggestions[slideNum] || [];
+      var html = '<option value="">Choose visual component...</option>';
+      items.forEach(function (item) {
+        html += '<option value="' + escapeHtml(item.id) + '" title="' + escapeHtml(item.reason || '') + '">' +
+          escapeHtml(item.name) + '</option>';
+      });
+      sel.innerHTML = html;
+      // Restore previous selection if any
+      if (state.slideVisuals[slideNum]) {
+        sel.value = state.slideVisuals[slideNum];
+      }
+    });
   }
 
   // === ENHANCE SLIDE ===
@@ -1184,7 +1269,8 @@
           language: state.language,
           styles: getEnabledStyles(),
           palette: { name: selectedStyle.name, colors: selectedStyle.colors },
-          font: state.font
+          font: state.font,
+          provider: state.provider
         })
       });
 
@@ -1243,6 +1329,74 @@
         console.log('[enhance ' + slideNumber + ']', event.message);
         break;
     }
+  }
+
+  // === REVISE SINGLE SLIDE ===
+  async function reviseSlide(slideNumber) {
+    var note = (state.slideComments[slideNumber] || '').trim();
+    var visual = (state.slideVisuals[slideNumber] || '').trim();
+
+    if (!note && !visual) {
+      toast('Add a revision note or select a visual component for slide ' + slideNumber, 'warning');
+      return;
+    }
+
+    var instructions = [];
+    if (note) instructions.push(note);
+    if (visual) instructions.push('Use visual component "' + visual + '" from the skills to visualize the core message of this slide');
+    var fullInstructions = 'Revise ONLY slide ' + slideNumber + ':\n' + instructions.join('\n');
+
+    var btn = document.querySelector('.btn-slide-revise[data-slide="' + slideNumber + '"]');
+    var overlay = $('#enhance-overlay-' + slideNumber);
+
+    if (btn) { btn.disabled = true; btn.classList.add('enhancing'); }
+    if (overlay) { overlay.hidden = false; overlay.querySelector('span').textContent = 'Revising...'; }
+
+    toast('Revising slide ' + slideNumber + '...', 'info');
+
+    try {
+      var selectedStyle = STYLES.find(function (s) { return s.id === state.palette; }) || STYLES[0];
+      var response = await fetch(API + '/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: state.generatedFilename,
+          slideNumber: slideNumber,
+          language: state.language,
+          styles: getEnabledStyles(),
+          palette: { name: selectedStyle.name, colors: selectedStyle.colors },
+          font: state.font,
+          provider: state.provider,
+          reviseInstructions: fullInstructions
+        })
+      });
+
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (var k = 0; k < lines.length; k++) {
+          var line = lines[k].trim();
+          if (line.startsWith('data: ')) {
+            try { handleEnhanceEvent(JSON.parse(line.slice(6)), slideNumber); } catch (e) { /* ignore */ }
+          }
+        }
+      }
+      if (buffer.trim().startsWith('data: ')) {
+        try { handleEnhanceEvent(JSON.parse(buffer.trim().slice(6)), slideNumber); } catch (e) { /* ignore */ }
+      }
+    } catch (err) {
+      toast('Revise failed: ' + err.message, 'error');
+    }
+
+    if (btn) { btn.disabled = false; btn.classList.remove('enhancing'); }
+    if (overlay) { overlay.hidden = true; overlay.querySelector('span').textContent = 'Enhancing...'; }
   }
 
   // === FULLSCREEN MODAL ===
@@ -1311,7 +1465,8 @@
         body: JSON.stringify({
           filename: state.generatedFilename,
           slides: state.slides,
-          styles: getEnabledStyles()
+          styles: getEnabledStyles(),
+          provider: state.provider
         })
       });
 
@@ -1513,7 +1668,7 @@
     $('#gen-actions-done').hidden = true;
     $('#gen-status-banner').className = 'gen-status-banner';
     $('#gen-status-text').textContent = 'Revising presentation...';
-    $('#gen-status-detail').textContent = 'Connecting to Claude';
+    $('#gen-status-detail').textContent = 'Connecting to ' + (state.provider === 'codex' ? 'Codex' : 'Claude');
     $('#gen-status-icon').innerHTML = '<div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0"></div>';
     state.genLastLogTime = Date.now();
     var logEl = $('#gen-log');
@@ -1526,7 +1681,8 @@
       language: state.language,
       styles: getEnabledStyles(),
       uploadedFiles: [],
-      revisionNumber: state.revisionCount
+      revisionNumber: state.revisionCount,
+      provider: state.provider
     };
 
     try {

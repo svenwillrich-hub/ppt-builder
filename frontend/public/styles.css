@@ -219,6 +219,51 @@ body {
   text-overflow: ellipsis;
 }
 
+/* Provider toggle */
+.provider-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+.provider-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.provider-label.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  background: var(--border);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.toggle-switch.active {
+  background: var(--accent);
+}
+.toggle-knob {
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-switch.active .toggle-knob {
+  transform: translateX(16px);
+}
+
 /* Palette grid rows */
 .palette-grid {
   display: flex;
@@ -633,6 +678,60 @@ body {
   margin-bottom: 24px;
 }
 .outline-header h2 { font-size: 24px; }
+
+/* Agenda box */
+.agenda-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.agenda-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.agenda-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.agenda-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.agenda-copy:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.agenda-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.agenda-item {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.agenda-num {
+  color: var(--accent);
+  font-weight: 600;
+}
 
 .slide-count {
   font-size: 14px;
@@ -1257,19 +1356,42 @@ body {
 .slide-viewer-comment::placeholder { color: var(--text-muted); }
 .slide-viewer-comment:focus { outline: none; border-color: var(--accent); }
 
-/* Slide viewer actions row */
+/* Slide viewer actions */
 .slide-viewer-actions {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 8px;
   padding: 8px 16px 12px;
 }
-.slide-viewer-actions .slide-viewer-comment { margin-top: 0; flex: 1; }
+.slide-viewer-actions-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.slide-viewer-actions-row .slide-viewer-comment { margin-top: 0; flex: 1; }
+
+/* Visual component dropdown */
+.slide-visual-select-wrap { width: 100%; }
+.slide-visual-select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+.slide-visual-select:hover { border-color: var(--accent); }
+.slide-visual-select:focus { outline: none; border-color: var(--accent); }
 
 /* Image wrapper for overlay */
 .slide-viewer-img-wrap { position: relative; }
 
-/* Enhance button */
+/* Slide action buttons (enhance + revise) */
+.btn-slide-revise,
 .btn-enhance {
   flex-shrink: 0;
   width: 36px;
@@ -1285,15 +1407,18 @@ body {
   transition: all 0.2s ease;
   margin-top: 0;
 }
+.btn-slide-revise:hover,
 .btn-enhance:hover {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-light);
 }
+.btn-slide-revise:disabled,
 .btn-enhance:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.btn-slide-revise.enhancing,
 .btn-enhance.enhancing {
   border-color: var(--accent);
   color: var(--accent);
@@ -1532,31 +1657,6 @@ body {
 }
 .slide-review-comment::placeholder { color: var(--text-muted); }
 .slide-review-comment:focus { outline: none; border-color: var(--accent); }
-
-.revision-global { margin-bottom: 16px; }
-.revision-global .option-label { margin-bottom: 6px; }
-
-/* === Revision Bar (Step 4) === */
-.revision-bar {
-  margin-top: 24px;
-  padding: 16px 20px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-.revision-bar .content-textarea {
-  margin-bottom: 12px;
-}
-.revision-bar-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.revision-bar-hint {
-  font-size: 13px;
-  color: var(--text-muted);
-}
 
 /* === QA Section === */
 .qa-section, .slide-review-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
