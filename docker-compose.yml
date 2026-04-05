@@ -18,6 +18,8 @@ services:
       - ./uploads:/app/uploads
       - ./skills:/app/skills:ro
       - ./config:/app/config
+      # Mount Claude credentials from host home directory
+      # Windows: uses %USERPROFILE%, Mac/Linux: uses $HOME
+      # On Mac: run docker-mac/extract-credentials.sh first to export from Keychain
       - ${CLAUDE_HOME:-${HOME:-${USERPROFILE}}}/.claude:/home/appuser/.claude
       - ${CLAUDE_HOME:-${HOME:-${USERPROFILE}}}/.claude.json:/home/appuser/.claude.json
-      - ./.credentials.json:/home/appuser/.claude/.credentials.json

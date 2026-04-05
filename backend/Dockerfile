@@ -21,6 +21,9 @@ RUN npm install --production
 # Pre-install pptxgenjs so Claude doesn't have to
 RUN npm install pptxgenjs
 
+# Make node_modules discoverable from any working directory (e.g. /tmp scripts)
+ENV NODE_PATH=/app/node_modules
+
 COPY . .
 
 # Create non-root user and directories
