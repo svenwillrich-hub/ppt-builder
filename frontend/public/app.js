@@ -955,74 +955,10 @@
   }
 
   function handleOutlineMarkdown(text) {
-    var slides = parseMarkdownOutline(text);
-    if (slides && slides.length > 0) {
-      applyOutlineData(slides);
-      toast(slides.length + ' slides parsed from file', 'success');
-    } else {
-      // No slide structure found — send through AI analysis
-      toast('No slide structure detected — sending to AI for analysis...', 'info');
-      $('#content-input').value = text;
-      updateAnalyzeButton();
-      startAnalysis('This content was uploaded as an outline file. Derive the slide structure from it as closely as possible. Preserve the existing slide titles, numbering, and content — do not invent new slides.');
-    }
-  }
-
-  function parseMarkdownOutline(text) {
-    // Patterns that indicate a slide heading:
-    //   ## Slide 1: Title       ## 1. Title       ## 1 - Title
-    //   # Slide 1: Title        # 1. Title
-    //   Slide 1: Title  (line on its own, followed by content)
-    //   1. Title  (numbered list style at top level)
-    var slidePattern = /^#{1,3}\s*(?:slide\s*)?(\d+)[\s.:)\-—]+(.+)/i;
-    var numberedPattern = /^(\d+)[\s.:)\-—]+(.+)/;
-
-    var lines = text.split('\n');
-    var slides = [];
-    var currentSlide = null;
-    var bodyLines = [];
-
-    function flushSlide() {
-      if (!currentSlide) return;
-      var body = bodyLines.join('\n').trim();
-      // Split into coreMessage (first non-bullet line) and description (bullets)
-      var descLines = [];
-      var core = '';
-      body.split('\n').forEach(function (l) {
-        var trimmed = l.trim();
-        if (!trimmed) return;
-        if (/^[-*+]\s/.test(trimmed) || /^\d+[.)]\s/.test(trimmed)) {
-          descLines.push(trimmed);
-        } else if (!core) {
-          core = trimmed;
-        } else {
-          descLines.push('- ' + trimmed);
-        }
-      });
-      currentSlide.coreMessage = core;
-      currentSlide.description = descLines.join('\n');
-      slides.push(currentSlide);
-    }
-
-    for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      var match = slidePattern.exec(line) || numberedPattern.exec(line);
-      if (match) {
-        flushSlide();
-        currentSlide = {
-          slideNumber: slides.length + 1,
-          actionTitle: match[2].trim(),
-          coreMessage: '',
-          description: '',
-          researchNeeded: false
-        };
-        bodyLines = [];
-      } else if (currentSlide) {
-        bodyLines.push(line);
-      }
-    }
-    flushSlide();
-    return slides;
+    toast('Sending outline to AI for analysis...', 'info');
+    $('#content-input').value = text;
+    updateAnalyzeButton();
+    startAnalysis('The user uploaded an outline file that defines the slide structure. Use it as the authoritative slide plan. Preserve the slide titles, numbering, ordering, and content from the outline exactly. Enrich each slide with details from the uploaded context files where relevant, but do not invent new slides or remove existing ones from the outline. The number of slides must match the outline.');
   }
 
   function applyOutlineData(slides) {
