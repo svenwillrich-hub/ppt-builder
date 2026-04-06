@@ -117,6 +117,14 @@
             <input type="file" id="file-input" multiple accept=".md,.txt,.pdf,.docx,.pptx,.png,.jpg,.jpeg,.gif,.svg" hidden>
           </div>
           <div id="uploaded-files" class="uploaded-files"></div>
+
+          <!-- Outline upload zone -->
+          <div id="outline-upload-zone" class="outline-upload-zone">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 14V4m0 0L6 8m4-4l4 4M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Drop outline JSON here or <label for="outline-file-input" class="outline-browse-link">browse</label></span>
+            <input type="file" id="outline-file-input" accept=".json" hidden>
+          </div>
+
           <textarea id="content-input" class="content-textarea" placeholder="Describe your presentation topic, audience, and key points..." rows="6"></textarea>
           <div class="pre-analyze-options">
             <div class="option-row">
@@ -160,6 +168,10 @@
             <div class="outline-header">
               <h2>Slide Outline</h2>
               <span class="slide-count" id="slide-count">0 slides</span>
+              <button id="btn-download-outline" class="btn btn-ghost btn-sm" title="Download outline as JSON">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0l-3-3m3 3l3-3M2 12v1h12v-1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Download Outline
+              </button>
             </div>
             <!-- Agenda overview -->
             <div class="agenda-box" id="agenda-box">

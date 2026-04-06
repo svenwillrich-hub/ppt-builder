@@ -230,6 +230,29 @@
     // Agenda copy button
     $('#agenda-copy').addEventListener('click', copyAgenda);
 
+    // Outline download
+    $('#btn-download-outline').addEventListener('click', downloadOutline);
+
+    // Outline upload zone (on Step 1)
+    var olz = $('#outline-upload-zone');
+    var olf = $('#outline-file-input');
+    olz.addEventListener('click', function (e) {
+      if (e.target.tagName !== 'LABEL') olf.click();
+    });
+    olz.addEventListener('dragover', function (e) { e.preventDefault(); olz.classList.add('dragover'); });
+    olz.addEventListener('dragleave', function () { olz.classList.remove('dragover'); });
+    olz.addEventListener('drop', function (e) {
+      e.preventDefault();
+      olz.classList.remove('dragover');
+      var files = Array.from(e.dataTransfer.files).filter(function (f) { return f.name.endsWith('.json'); });
+      if (files.length) handleOutlineUpload(files[0]);
+      else toast('Please drop a .json outline file', 'warning');
+    });
+    olf.addEventListener('change', function () {
+      if (olf.files.length) handleOutlineUpload(olf.files[0]);
+      olf.value = '';
+    });
+
     // Step navigation (clickable completed steps)
     $$('.step-indicator .step').forEach(function (el) {
       el.addEventListener('click', function () {
@@ -848,6 +871,88 @@
       researchNeeded: false
     });
     renderSlideOutline();
+  }
+
+  // === OUTLINE DOWNLOAD / UPLOAD ===
+  function downloadOutline() {
+    if (!state.slides.length) { toast('No outline to download', 'warning'); return; }
+    var outline = {
+      version: 1,
+      language: state.language,
+      palette: state.palette,
+      font: state.font,
+      slides: state.slides.map(function (s, i) {
+        return {
+          slideNumber: i + 1,
+          actionTitle: s.actionTitle || '',
+          coreMessage: s.coreMessage || '',
+          description: s.description || '',
+          researchNeeded: !!s.researchNeeded
+        };
+      })
+    };
+    var blob = new Blob([JSON.stringify(outline, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'outline.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast('Outline downloaded', 'success');
+  }
+
+  function handleOutlineUpload(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = JSON.parse(e.target.result);
+      } catch (err) {
+        toast('Invalid JSON file', 'error');
+        return;
+      }
+      // Validate structure
+      if (!data.slides || !Array.isArray(data.slides) || data.slides.length === 0) {
+        toast('Outline must contain a "slides" array with at least one slide', 'error');
+        return;
+      }
+      var valid = true;
+      var errors = [];
+      data.slides.forEach(function (s, i) {
+        if (!s.actionTitle || typeof s.actionTitle !== 'string' || !s.actionTitle.trim()) {
+          errors.push('Slide ' + (i + 1) + ': missing actionTitle');
+          valid = false;
+        }
+        if (!s.description || typeof s.description !== 'string' || !s.description.trim()) {
+          errors.push('Slide ' + (i + 1) + ': missing description');
+          valid = false;
+        }
+      });
+      if (!valid) {
+        toast('Invalid outline: ' + errors.slice(0, 3).join('; '), 'error');
+        return;
+      }
+      // Apply outline
+      state.slides = data.slides.map(function (s, i) {
+        return {
+          slideNumber: i + 1,
+          actionTitle: s.actionTitle,
+          coreMessage: s.coreMessage || '',
+          description: s.description,
+          researchNeeded: !!s.researchNeeded
+        };
+      });
+      if (data.language) state.language = data.language;
+      if (data.palette) { state.palette = data.palette; applyPalette(data.palette); }
+      if (data.font) state.font = data.font;
+      // Navigate to outline page
+      updateStep(2);
+      state.highestStep = Math.max(state.highestStep, 2);
+      $('#outline-analyzing').hidden = true;
+      $('#outline-ready').hidden = false;
+      renderSlideOutline();
+      renderAnalysisFacts();
+      toast(state.slides.length + ' slides loaded from outline', 'success');
+    };
+    reader.readAsText(file);
   }
 
   function setupDragAndDrop() {

@@ -507,6 +507,32 @@ body {
   color: var(--text-muted);
 }
 
+/* Outline upload zone */
+.outline-upload-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-muted);
+  background: var(--surface);
+  font-size: 13px;
+}
+.outline-upload-zone:hover, .outline-upload-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.outline-browse-link {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 /* Uploaded files */
 .uploaded-files { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
@@ -674,10 +700,12 @@ body {
 .outline-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 24px;
 }
 .outline-header h2 { font-size: 24px; }
+.outline-header .slide-count { margin-right: auto; }
+.outline-header #btn-download-outline { white-space: nowrap; }
 
 /* Agenda box */
 .agenda-box {
