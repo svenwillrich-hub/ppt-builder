@@ -121,8 +121,9 @@
           <!-- Outline upload zone -->
           <div id="outline-upload-zone" class="outline-upload-zone">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 14V4m0 0L6 8m4-4l4 4M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>Drop outline JSON here or <label for="outline-file-input" class="outline-browse-link">browse</label></span>
-            <input type="file" id="outline-file-input" accept=".json" hidden>
+            <span>Drop outline here or <label for="outline-file-input" class="outline-browse-link">browse</label></span>
+            <span class="chip">JSON</span><span class="chip">MD</span><span class="chip">TXT</span>
+            <input type="file" id="outline-file-input" accept=".json,.md,.txt" hidden>
           </div>
 
           <textarea id="content-input" class="content-textarea" placeholder="Describe your presentation topic, audience, and key points..." rows="6"></textarea>

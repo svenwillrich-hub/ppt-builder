@@ -244,9 +244,12 @@
     olz.addEventListener('drop', function (e) {
       e.preventDefault();
       olz.classList.remove('dragover');
-      var files = Array.from(e.dataTransfer.files).filter(function (f) { return f.name.endsWith('.json'); });
-      if (files.length) handleOutlineUpload(files[0]);
-      else toast('Please drop a .json outline file', 'warning');
+      var allowed = ['.json', '.md', '.txt'];
+      var file = Array.from(e.dataTransfer.files).find(function (f) {
+        return allowed.some(function (ext) { return f.name.toLowerCase().endsWith(ext); });
+      });
+      if (file) handleOutlineUpload(file);
+      else toast('Please drop a .json, .md, or .txt outline file', 'warning');
     });
     olf.addEventListener('change', function () {
       if (olf.files.length) handleOutlineUpload(olf.files[0]);
@@ -903,56 +906,134 @@
   function handleOutlineUpload(file) {
     var reader = new FileReader();
     reader.onload = function (e) {
-      try {
-        var data = JSON.parse(e.target.result);
-      } catch (err) {
-        toast('Invalid JSON file', 'error');
-        return;
+      var text = e.target.result;
+      var isJson = file.name.toLowerCase().endsWith('.json');
+
+      if (isJson) {
+        handleOutlineJson(text);
+      } else {
+        handleOutlineMarkdown(text);
       }
-      // Validate structure
-      if (!data.slides || !Array.isArray(data.slides) || data.slides.length === 0) {
-        toast('Outline must contain a "slides" array with at least one slide', 'error');
-        return;
-      }
-      var valid = true;
-      var errors = [];
-      data.slides.forEach(function (s, i) {
-        if (!s.actionTitle || typeof s.actionTitle !== 'string' || !s.actionTitle.trim()) {
-          errors.push('Slide ' + (i + 1) + ': missing actionTitle');
-          valid = false;
-        }
-        if (!s.description || typeof s.description !== 'string' || !s.description.trim()) {
-          errors.push('Slide ' + (i + 1) + ': missing description');
-          valid = false;
-        }
-      });
-      if (!valid) {
-        toast('Invalid outline: ' + errors.slice(0, 3).join('; '), 'error');
-        return;
-      }
-      // Apply outline
-      state.slides = data.slides.map(function (s, i) {
-        return {
-          slideNumber: i + 1,
-          actionTitle: s.actionTitle,
-          coreMessage: s.coreMessage || '',
-          description: s.description,
-          researchNeeded: !!s.researchNeeded
-        };
-      });
-      if (data.language) state.language = data.language;
-      if (data.palette) { state.palette = data.palette; applyPalette(data.palette); }
-      if (data.font) state.font = data.font;
-      // Navigate to outline page
-      updateStep(2);
-      state.highestStep = Math.max(state.highestStep, 2);
-      $('#outline-analyzing').hidden = true;
-      $('#outline-ready').hidden = false;
-      renderSlideOutline();
-      renderAnalysisFacts();
-      toast(state.slides.length + ' slides loaded from outline', 'success');
     };
     reader.readAsText(file);
+  }
+
+  function handleOutlineJson(text) {
+    try {
+      var data = JSON.parse(text);
+    } catch (err) {
+      toast('Invalid JSON file', 'error');
+      return;
+    }
+    if (!data.slides || !Array.isArray(data.slides) || data.slides.length === 0) {
+      toast('Outline must contain a "slides" array with at least one slide', 'error');
+      return;
+    }
+    var errors = [];
+    data.slides.forEach(function (s, i) {
+      if (!s.actionTitle || typeof s.actionTitle !== 'string' || !s.actionTitle.trim())
+        errors.push('Slide ' + (i + 1) + ': missing actionTitle');
+      if (!s.description || typeof s.description !== 'string' || !s.description.trim())
+        errors.push('Slide ' + (i + 1) + ': missing description');
+    });
+    if (errors.length) {
+      toast('Invalid outline: ' + errors.slice(0, 3).join('; '), 'error');
+      return;
+    }
+    applyOutlineData(data.slides.map(function (s, i) {
+      return {
+        slideNumber: i + 1,
+        actionTitle: s.actionTitle,
+        coreMessage: s.coreMessage || '',
+        description: s.description,
+        researchNeeded: !!s.researchNeeded
+      };
+    }));
+    if (data.language) state.language = data.language;
+    if (data.palette) { state.palette = data.palette; applyPalette(data.palette); }
+    if (data.font) state.font = data.font;
+  }
+
+  function handleOutlineMarkdown(text) {
+    var slides = parseMarkdownOutline(text);
+    if (slides && slides.length > 0) {
+      applyOutlineData(slides);
+      toast(slides.length + ' slides parsed from file', 'success');
+    } else {
+      // No slide structure found — send through AI analysis
+      toast('No slide structure detected — sending to AI for analysis...', 'info');
+      $('#content-input').value = text;
+      updateAnalyzeButton();
+      startAnalysis('This content was uploaded as an outline file. Derive the slide structure from it as closely as possible. Preserve the existing slide titles, numbering, and content — do not invent new slides.');
+    }
+  }
+
+  function parseMarkdownOutline(text) {
+    // Patterns that indicate a slide heading:
+    //   ## Slide 1: Title       ## 1. Title       ## 1 - Title
+    //   # Slide 1: Title        # 1. Title
+    //   Slide 1: Title  (line on its own, followed by content)
+    //   1. Title  (numbered list style at top level)
+    var slidePattern = /^#{1,3}\s*(?:slide\s*)?(\d+)[\s.:)\-—]+(.+)/i;
+    var numberedPattern = /^(\d+)[\s.:)\-—]+(.+)/;
+
+    var lines = text.split('\n');
+    var slides = [];
+    var currentSlide = null;
+    var bodyLines = [];
+
+    function flushSlide() {
+      if (!currentSlide) return;
+      var body = bodyLines.join('\n').trim();
+      // Split into coreMessage (first non-bullet line) and description (bullets)
+      var descLines = [];
+      var core = '';
+      body.split('\n').forEach(function (l) {
+        var trimmed = l.trim();
+        if (!trimmed) return;
+        if (/^[-*+]\s/.test(trimmed) || /^\d+[.)]\s/.test(trimmed)) {
+          descLines.push(trimmed);
+        } else if (!core) {
+          core = trimmed;
+        } else {
+          descLines.push('- ' + trimmed);
+        }
+      });
+      currentSlide.coreMessage = core;
+      currentSlide.description = descLines.join('\n');
+      slides.push(currentSlide);
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var match = slidePattern.exec(line) || numberedPattern.exec(line);
+      if (match) {
+        flushSlide();
+        currentSlide = {
+          slideNumber: slides.length + 1,
+          actionTitle: match[2].trim(),
+          coreMessage: '',
+          description: '',
+          researchNeeded: false
+        };
+        bodyLines = [];
+      } else if (currentSlide) {
+        bodyLines.push(line);
+      }
+    }
+    flushSlide();
+    return slides;
+  }
+
+  function applyOutlineData(slides) {
+    state.slides = slides;
+    updateStep(2);
+    state.highestStep = Math.max(state.highestStep, 2);
+    $('#outline-analyzing').hidden = true;
+    $('#outline-ready').hidden = false;
+    renderSlideOutline();
+    renderAnalysisFacts();
+    toast(slides.length + ' slides loaded from outline', 'success');
   }
 
   function setupDragAndDrop() {
