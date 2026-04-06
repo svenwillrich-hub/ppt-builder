@@ -1185,6 +1185,7 @@
         $('#gen-status-banner').className = 'gen-status-banner done';
         $('#gen-status-text').textContent = 'Generation complete';
         $('#gen-status-detail').textContent = state.slides.length + ' slides in ' + formatDuration(state.timings.generate);
+        $('#gen-progress-stats').innerHTML = '';
         $('#gen-status-icon').innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="var(--success)" stroke-width="2"/><path d="M7 12l3 3 7-7" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         $('#gen-progress-bar').style.width = '100%';
         $('#gen-actions-running').hidden = true;
