@@ -30,9 +30,61 @@ description: "Create professional presentations in the Capco consulting style �
 
 **IMPORTANT:** All skill files are already included in this prompt. Do NOT attempt to read files from `/mnt/skills/` — that path does not exist. PptxGenJS is pre-installed at `/app/node_modules/pptxgenjs`.
 
-**THREE GOLDEN RULES (always apply):**
+**FOUR GOLDEN RULES (always apply):**
 1. **Header on EVERY content slide** — `addSlideHeader()` with title + pipe separator + accent line + description
 2. **Visual components embedded, not standalone** — Always surround with context cards, info grids, or source cards (Pattern 12)
+3. **Single-element text+shape** — When a shape (RECTANGLE, OVAL, ROUNDED_RECTANGLE, CHEVRON, etc.) contains text, ALWAYS use `addText()` with `shape` + `fill` properties instead of separate `addShape()` + `addText()` calls. This creates ONE movable element in PowerPoint, not two stacked elements that drift apart when moved.
+
+```javascript
+// ❌ WRONG: Two separate elements (shape + text overlay)
+slide.addShape(pres.shapes.RECTANGLE, {
+  x: 1, y: 1, w: 3, h: 0.5,
+  fill: { color: "00868C" },
+});
+slide.addText("My Label", {
+  x: 1, y: 1, w: 3, h: 0.5,
+  fontSize: 12, color: "FFFFFF", align: "center", valign: "middle",
+});
+
+// ✅ CORRECT: Single element with shape + fill + text
+slide.addText("My Label", {
+  x: 1, y: 1, w: 3, h: 0.5,
+  shape: pres.shapes.RECTANGLE,
+  fill: { color: "00868C" },
+  fontSize: 12, color: "FFFFFF", align: "center", valign: "middle",
+});
+
+// ✅ CORRECT: With border, shadow, and other shape properties
+slide.addText("Card Title", {
+  x: 1, y: 1, w: 3, h: 0.8,
+  shape: pres.shapes.RECTANGLE,
+  fill: { color: "F2F2F2" },
+  line: { color: "D8D8D8", width: 0.75 },
+  shadow: { type: "outer", blur: 4, offset: 1, angle: 135, color: "000000", opacity: 0.08 },
+  fontSize: 12, fontFace: "Century Gothic", color: "000000",
+  bold: true, valign: "top", margin: [7, 7, 7, 7],
+});
+
+// ✅ CORRECT: OVAL shape with text inside
+slide.addText("VS", {
+  x: 2, y: 1, w: 1.0, h: 1.0,
+  shape: pres.shapes.OVAL,
+  fill: { color: "000000" },
+  fontSize: 22, fontFace: "Century Gothic", color: "FFFFFF",
+  bold: true, align: "center", valign: "middle",
+});
+
+// ✅ CORRECT: ROUNDED_RECTANGLE with text
+slide.addText("Tag Label", {
+  x: 1, y: 1, w: 2, h: 0.35,
+  shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: 0.04,
+  fill: { color: "00868C" },
+  fontSize: 9, fontFace: "Century Gothic", color: "FFFFFF",
+  bold: true, align: "center", valign: "middle",
+});
+```
+
+**When to use separate elements:** Only when a single shape needs MULTIPLE independently positioned text blocks (e.g., a card background with a title AND body at different y-positions). In that case, use `addText` with `shape`+`fill` for the FIRST/main text, and plain `addText` for additional texts on top. For multi-line content within one text block, use the PptxGenJS array format with `breakLine: true`.
 
 ---
 
@@ -437,11 +489,12 @@ function createExecSummarySlide(pres, opts) {
     valign: "top", margin: 0,
   });
 
-  // Sidebar (left column)
+  // Sidebar (left column — single element with shape+fill)
   const sideX = 0.6;
   const sideW = 2.9;
-  slide.addShape(pres.shapes.RECTANGLE, {
+  slide.addText("", {
     x: sideX, y: 1.5, w: sideW, h: 3.7,
+    shape: pres.shapes.RECTANGLE,
     fill: { color: palette.lightGray },
   });
 
@@ -492,16 +545,14 @@ function createExecSummarySlide(pres, opts) {
     });
   });
 
-  // Bottom insight bar
+  // Bottom insight bar (single element)
   if (opts.insight) {
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: 3.8, y: 5.45, w: 9, h: 1.4,
-      fill: { color: palette.lightGray },
-    });
     slide.addText(opts.insight, {
-      x: 3.95, y: 5.55, w: 8.7, h: 1.2,
+      x: 3.8, y: 5.45, w: 9, h: 1.4,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: palette.lightGray },
       fontSize: 12, fontFace: "Century Gothic", color: palette.textBody,
-      valign: "top", margin: 0,
+      valign: "top", margin: [7, 11, 7, 11],
     });
   }
 
@@ -653,17 +704,15 @@ function createFourColumnOverview(pres, opts) {
     valign: "bottom", margin: 0,
   });
 
-  // Accent stats bar
-  slide.addShape(pres.shapes.RECTANGLE, {
-    x: 0.6, y: 0.95, w: 12.13, h: 0.35,
-    fill: { color: palette.primary },
-  });
+  // Accent stats bar (single element: shape + text)
   const statsText = opts.stats.map((s, i) => ({
     text: s + (i < opts.stats.length - 1 ? "    |    " : ""),
     options: { bold: true },
   }));
   slide.addText(statsText, {
     x: 0.6, y: 0.95, w: 12.13, h: 0.35,
+    shape: pres.shapes.RECTANGLE,
+    fill: { color: palette.primary },
     fontSize: 13, fontFace: "Century Gothic", color: palette.textLight,
     align: "center", valign: "middle", margin: 0,
   });
@@ -685,17 +734,13 @@ function createFourColumnOverview(pres, opts) {
       fill: { color: palette.lightGray },
     });
 
-    // Column header (accent top area)
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x, y: colY, w: colW, h: 0.75,
-      fill: { color: palette.primary },
-    });
-
-    // Title in header
+    // Column header (accent top area with title — single element)
     slide.addText(col.title, {
-      x: x + 0.1, y: colY + 0.1, w: colW - 0.2, h: 0.55,
+      x, y: colY, w: colW, h: 0.75,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: palette.primary },
       fontSize: 13, fontFace: "Century Gothic", color: palette.textLight,
-      bold: true, valign: "middle", margin: 0,
+      bold: true, valign: "middle", margin: [7, 7, 7, 7],
     });
 
     // "KEY OFFERINGS:" label
@@ -795,8 +840,9 @@ function createServicesMatrix(pres, opts) {
   const colW = gridW / colCount;
 
   // Column header background bar
-  slide.addShape(pres.shapes.RECTANGLE, {
+  slide.addText("", {
     x: startX, y: headerY, w: 12.13, h: 0.34,
+    shape: pres.shapes.RECTANGLE,
     fill: { color: palette.border },
   });
 
@@ -817,15 +863,13 @@ function createServicesMatrix(pres, opts) {
     const y = rowStartY + ri * rowH;
     const rowColor = rowColors[ri % rowColors.length];
 
-    // Row label cell
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: startX, y, w: rowLabelW, h: rowH,
-      fill: { color: rowColor },
-    });
+    // Row label cell (single element: shape + text)
     slide.addText(row.label, {
-      x: startX + 0.15, y, w: rowLabelW - 0.3, h: rowH,
+      x: startX, y, w: rowLabelW, h: rowH,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: rowColor },
       fontSize: 14, fontFace: "Century Gothic", color: palette.textLight,
-      bold: true, valign: "middle", margin: 0,
+      bold: true, valign: "middle", margin: [0, 0, 0, 11],
     });
 
     // Row content cells
@@ -838,14 +882,12 @@ function createServicesMatrix(pres, opts) {
     row.items.forEach((item) => {
       if (item.col !== undefined && item.text) {
         const cellX = gridStartX + item.col * colW + 0.1;
-        slide.addShape(pres.shapes.RECTANGLE, {
-          x: cellX, y: y + 0.15, w: colW - 0.2, h: 0.45,
-          fill: { color: rowColor },
-        });
         slide.addText(item.text, {
-          x: cellX + 0.05, y: y + 0.15, w: colW - 0.3, h: 0.45,
+          x: cellX, y: y + 0.15, w: colW - 0.2, h: 0.45,
+          shape: pres.shapes.RECTANGLE,
+          fill: { color: rowColor },
           fontSize: 10, fontFace: "Century Gothic", color: palette.textLight,
-          valign: "middle", margin: 0,
+          valign: "middle", margin: [0, 4, 0, 4],
         });
       }
     });
@@ -1153,6 +1195,7 @@ Recommended slide order (NO section dividers — rhythm comes from consistent he
 14. **NEVER reuse option objects** — Create fresh objects for each `addShape`/`addText` call
 15. **No standalone visual components** — When using visual components (pyramids, chevrons, quadrants, etc. from capco-visual-components), NEVER let them be the only element on a slide. Always embed them with surrounding context: info grids, source cards, actor chains, or a second component via mid-slide divider
 16. **No thin slides** — If a slide uses less than 60% of vertical space, consolidate it with a related slide using Strategy C (mid-slide divider). Prefer fewer, denser slides over many sparse ones
+17. **NEVER use separate addShape() + addText() for text inside shapes** — This creates two loose elements that drift apart when moved in PowerPoint. ALWAYS use `addText()` with `shape` + `fill` properties to create a single grouped element. See Golden Rule 3 above for correct patterns
 
 ---
 
@@ -1318,6 +1361,7 @@ After generating the deck, verify:
 - [ ] **Content density**: No slide uses less than 60% of vertical space
 - [ ] **No `#` in hex colors**: PptxGenJS pitfall check
 - [ ] **No shared option objects**: Each addShape/addText uses fresh style objects
+- [ ] **No separate shape+text pairs**: Every shape with text uses `addText({shape, fill})` pattern — no `addShape()` + `addText()` at same position
 
 Follow this Visual QA process:
 1. Convert to images: `soffice.py --headless --convert-to pdf` → `pdftoppm`

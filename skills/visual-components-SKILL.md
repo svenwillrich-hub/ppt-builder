@@ -288,15 +288,13 @@ function addVSComparison(slide, pres, opts) {
   const halfW = (opts.w - centerW) / 2;
   const centerX = opts.x + halfW;
 
-  // VS circle in the center-top
+  // VS circle in the center-top (single element)
   const vsY = opts.y;
   const vsCX = centerX + centerW / 2;
-  slide.addShape(pres.shapes.OVAL, {
-    x: vsCX - 0.5, y: vsY, w: 1.0, h: 1.0,
-    fill: { color: palette.textDark },
-  });
   slide.addText("VS", {
     x: vsCX - 0.5, y: vsY, w: 1.0, h: 1.0,
+    shape: pres.shapes.OVAL,
+    fill: { color: palette.textDark },
     fontSize: 22, fontFace: "Century Gothic", color: palette.textLight,
     bold: true, align: "center", valign: "middle", margin: 0,
   });
@@ -323,15 +321,12 @@ function addVSComparison(slide, pres, opts) {
     const ry = rowStartY + i * rowH;
     const barY = ry + (rowH - barH) / 2;
 
-    // Aspect label (center black box)
-    slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: centerX + 0.05, y: ry + (rowH - 0.35) / 2,
-      w: centerW - 0.1, h: 0.35,
-      fill: { color: palette.textDark }, rectRadius: 0.04,
-    });
+    // Aspect label (center black box — single element)
     slide.addText(asp.name || "", {
       x: centerX + 0.05, y: ry + (rowH - 0.35) / 2,
       w: centerW - 0.1, h: 0.35,
+      shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: 0.04,
+      fill: { color: palette.textDark },
       fontSize: 8, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -343,13 +338,11 @@ function addVSComparison(slide, pres, opts) {
       x: centerX - lBarW - 0.05, y: barY, w: lBarW, h: barH,
       fill: { color: leftColor }, rectRadius: barH / 2,
     });
-    // Left percentage circle
-    slide.addShape(pres.shapes.OVAL, {
-      x: centerX - lBarW - 0.05 - 0.45, y: barY - 0.05, w: 0.45, h: barH + 0.1,
-      fill: { color: leftColor },
-    });
+    // Left percentage circle (single element)
     slide.addText(lVal + "%", {
       x: centerX - lBarW - 0.05 - 0.45, y: barY - 0.05, w: 0.45, h: barH + 0.1,
+      shape: pres.shapes.OVAL,
+      fill: { color: leftColor },
       fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -361,13 +354,11 @@ function addVSComparison(slide, pres, opts) {
       x: centerX + centerW + 0.05, y: barY, w: rBarW, h: barH,
       fill: { color: rightColor }, rectRadius: barH / 2,
     });
-    // Right percentage circle
-    slide.addShape(pres.shapes.OVAL, {
-      x: centerX + centerW + 0.05 + rBarW, y: barY - 0.05, w: 0.45, h: barH + 0.1,
-      fill: { color: rightColor },
-    });
+    // Right percentage circle (single element)
     slide.addText(rVal + "%", {
       x: centerX + centerW + 0.05 + rBarW, y: barY - 0.05, w: 0.45, h: barH + 0.1,
+      shape: pres.shapes.OVAL,
+      fill: { color: rightColor },
       fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -411,13 +402,11 @@ function addBigNumberCallouts(slide, pres, opts) {
     const cx = opts.x + i * (colW + gap);
     const col = colors[i % colors.length];
 
-    // Category tag (colored rounded rect)
-    slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: cx + colW * 0.15, y: opts.y, w: colW * 0.7, h: tagH,
-      fill: { color: col }, rectRadius: 0.04,
-    });
+    // Category tag (colored rounded rect — single element)
     slide.addText(item.label || "", {
       x: cx + colW * 0.15, y: opts.y, w: colW * 0.7, h: tagH,
+      shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: 0.04,
+      fill: { color: col },
       fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -739,17 +728,15 @@ function addChevronProcess(slide, pres, opts) {
     });
   });
 
-  // Additional details bar at bottom
+  // Additional details bar at bottom (single element)
   if (opts.additionalDetails) {
     const adY = opts.y + opts.h - 0.35;
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: opts.x, y: adY, w: opts.w, h: 0.3,
-      fill: { color: palette.lightGray },
-    });
     slide.addText(opts.additionalDetails, {
-      x: opts.x + 0.1, y: adY, w: opts.w - 0.2, h: 0.3,
+      x: opts.x, y: adY, w: opts.w, h: 0.3,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: palette.lightGray },
       fontSize: 8, fontFace: "Century Gothic", color: palette.textBody,
-      valign: "middle", margin: 0,
+      valign: "middle", margin: [0, 7, 0, 7],
     });
   }
 }
@@ -828,12 +815,11 @@ function addAgileArc(slide, pres, opts) {
     const circleSize = 0.38;
 
     // Number circle
-    slide.addShape(pres.shapes.OVAL, {
-      x: stepsAreaX, y: sy + (stepRowH - circleSize) / 2, w: circleSize, h: circleSize,
-      fill: { color: color },
-    });
+    // Number circle (single element)
     slide.addText(String(i + 1), {
       x: stepsAreaX, y: sy + (stepRowH - circleSize) / 2, w: circleSize, h: circleSize,
+      shape: pres.shapes.OVAL,
+      fill: { color: color },
       fontSize: 12, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -913,14 +899,10 @@ function addPyramid(slide, pres, opts) {
     const avgWidth = pyramidW * ((topWidthRatio + bottomWidthRatio) / 2);
     const lx = pyramidX + (pyramidW - avgWidth) / 2;
 
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: lx, y: ly + 0.02, w: avgWidth, h: layerH - 0.04,
-      fill: { color: color },
-    });
-
-    // Layer label inside
     slide.addText(layer.label || "", {
-      x: lx + 0.1, y: ly + 0.02, w: avgWidth - 0.2, h: layerH - 0.04,
+      x: lx, y: ly + 0.02, w: avgWidth, h: layerH - 0.04,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: color },
       fontSize: 9, fontFace: "Century Gothic", color: i < 2 ? "FFFFFF" : "000000",
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -984,13 +966,11 @@ function addSWOT(slide, pres, opts) {
     const ry = opts.y + i * rowH;
 
     // Icon circle
-    slide.addShape(pres.shapes.OVAL, {
-      x: opts.x, y: ry + (rowH - circleSize) / 2, w: circleSize, h: circleSize,
-      fill: { color: item.color },
-    });
-
-    // Icon image inside circle (if provided)
     if (opts.icons && opts.icons[item.letter.toLowerCase()]) {
+      slide.addShape(pres.shapes.OVAL, {
+        x: opts.x, y: ry + (rowH - circleSize) / 2, w: circleSize, h: circleSize,
+        fill: { color: item.color },
+      });
       slide.addImage({
         data: opts.icons[item.letter.toLowerCase()],
         x: opts.x + circleSize * 0.2,
@@ -998,9 +978,11 @@ function addSWOT(slide, pres, opts) {
         w: circleSize * 0.6, h: circleSize * 0.6,
       });
     } else {
-      // Fallback: letter inside circle
+      // Fallback: letter inside circle (single element)
       slide.addText(item.letter, {
         x: opts.x, y: ry + (rowH - circleSize) / 2, w: circleSize, h: circleSize,
+        shape: pres.shapes.OVAL,
+        fill: { color: item.color },
         fontSize: 22, fontFace: "Century Gothic", color: palette.textLight,
         bold: true, align: "center", valign: "middle", margin: 0,
       });
@@ -1172,14 +1154,11 @@ function addPentagonStrategy(slide, pres, opts) {
     if (i >= factors.length) return;
     const color = colors[i % colors.length];
 
-    slide.addShape(pres.shapes.OVAL, {
-      x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
-      w: circleSize, h: circleSize,
-      fill: { color: color },
-    });
     slide.addText(factors[i].label || "", {
       x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
       w: circleSize, h: circleSize,
+      shape: pres.shapes.OVAL,
+      fill: { color: color },
       fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -1250,14 +1229,12 @@ function addProjectPentagon(slide, pres, opts) {
     }
   }
 
-  // Center label
-  slide.addShape(pres.shapes.OVAL, {
-    x: centerCX - 0.5, y: centerCY - 0.35, w: 1.0, h: 0.7,
-    fill: { color: palette.lightGray },
-    line: { color: primary, width: 1.5 },
-  });
+  // Center label (single element)
   slide.addText(opts.centerLabel || "Project", {
     x: centerCX - 0.5, y: centerCY - 0.35, w: 1.0, h: 0.7,
+    shape: pres.shapes.OVAL,
+    fill: { color: palette.lightGray },
+    line: { color: primary, width: 1.5 },
     fontSize: 10, fontFace: "Century Gothic", color: primary,
     bold: true, align: "center", valign: "middle", margin: 0,
   });
@@ -1268,14 +1245,11 @@ function addProjectPentagon(slide, pres, opts) {
     const color = colors[i % colors.length];
     const dim = dims[i];
 
-    slide.addShape(pres.shapes.OVAL, {
-      x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
-      w: circleSize, h: circleSize,
-      fill: { color: color },
-    });
     slide.addText(dim.letter || "", {
       x: pos.cx - circleSize / 2, y: pos.cy - circleSize / 2,
       w: circleSize, h: circleSize,
+      shape: pres.shapes.OVAL,
+      fill: { color: color },
       fontSize: 18, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -1351,15 +1325,12 @@ function addHorizontalTimeline(slide, pres, opts) {
     const cx = n === 1 ? opts.x + opts.w / 2 : opts.x + i * spacing;
     const color = colors[i % colors.length];
 
-    // Circle marker on the line
-    slide.addShape(pres.shapes.OVAL, {
-      x: cx - circleSize / 2, y: lineY - circleSize / 2,
-      w: circleSize, h: circleSize,
-      fill: { color: color },
-    });
+    // Circle marker on the line (single element)
     slide.addText(event.year || "", {
       x: cx - circleSize / 2, y: lineY - circleSize / 2,
       w: circleSize, h: circleSize,
+      shape: pres.shapes.OVAL,
+      fill: { color: color },
       fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -1446,14 +1417,12 @@ function addVerticalTimeline(slide, pres, opts) {
       fill: { color: color },
     });
 
-    // KPI bubble (right of axis)
+    // KPI bubble (right of axis — single element)
     const bubbleX = axisX + 0.5;
-    slide.addShape(pres.shapes.OVAL, {
-      x: bubbleX, y: ry - bubbleSize / 2, w: bubbleSize, h: bubbleSize,
-      fill: { color: color },
-    });
     slide.addText(event.value || "", {
       x: bubbleX, y: ry - bubbleSize / 2, w: bubbleSize, h: bubbleSize,
+      shape: pres.shapes.OVAL,
+      fill: { color: color },
       fontSize: 16, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -1516,15 +1485,13 @@ function addFunnelBars(slide, pres, opts) {
       fill: { color: palette.lightGray }, rectRadius: barH / 2,
     });
 
-    // Center label tag
+    // Center label tag (single element)
     const tagW = barW * 0.25;
     const tagX = bx + (barW - tagW) / 2;
-    slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: tagX, y: by + 0.03, w: tagW, h: barH - 0.06,
-      fill: { color: primary }, rectRadius: (barH - 0.06) / 2,
-    });
     slide.addText(item.label || "", {
       x: tagX, y: by + 0.03, w: tagW, h: barH - 0.06,
+      shape: pres.shapes.ROUNDED_RECTANGLE, rectRadius: (barH - 0.06) / 2,
+      fill: { color: primary },
       fontSize: 7, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -1739,15 +1706,11 @@ function addCalloutBubbles(slide, pres, opts) {
     const cx = opts.x + col * (cellW + gap) + cellW / 2;
     const cy = opts.y + row * (cellH + gap) + cellH * 0.35;
 
-    // Elliptical bubble
-    slide.addShape(pres.shapes.OVAL, {
-      x: cx - bubbleW / 2, y: cy - bubbleH / 2, w: bubbleW, h: bubbleH,
-      fill: { color: primary },
-    });
-
-    // Value text inside
+    // Elliptical bubble with value text (single element)
     slide.addText(b.value || "", {
       x: cx - bubbleW / 2, y: cy - bubbleH / 2, w: bubbleW, h: bubbleH,
+      shape: pres.shapes.OVAL,
+      fill: { color: primary },
       fontSize: 14, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle", margin: 0,
     });
@@ -2139,13 +2102,10 @@ function addLayerStack(slide, pres, opts) {
     const sideX = stackX + stackW + 0.15;
     const sideLabelColor = opts.sideLabelColor || palette.textBody;
 
-    slide.addShape(pres.shapes.RECTANGLE, {
-      x: sideX, y: opts.y, w: sideW, h: opts.h,
-      fill: { color: sideLabelColor },
-    });
-
     slide.addText(opts.sideLabel, {
       x: sideX, y: opts.y, w: sideW, h: opts.h,
+      shape: pres.shapes.RECTANGLE,
+      fill: { color: sideLabelColor },
       fontSize: 9, fontFace: "Century Gothic", color: palette.textLight,
       bold: true, align: "center", valign: "middle",
       rotate: 270, margin: 0,
@@ -2528,6 +2488,22 @@ addQuadrants(slide, pres, {
 6. **NEVER exceed content area** — Respect 0.6" margins (content area: 0.6 to 12.73 horizontal, 1.5 to 7.1 vertical on a content slide with header)
 7. **NEVER forget to import pres.shapes/pres.charts** — Reference them via the `pres` parameter
 8. **NEVER assume fixed item count** — All functions handle variable array lengths
+9. **NEVER use separate addShape() + addText() for text inside shapes** — This creates two loose elements that drift apart when moved in PowerPoint. ALWAYS use `addText()` with `shape` + `fill` properties to create a single grouped element:
+
+```javascript
+// ❌ WRONG: Two separate elements
+slide.addShape(pres.shapes.OVAL, { x, y, w: 1, h: 1, fill: { color: "00868C" } });
+slide.addText("VS", { x, y, w: 1, h: 1, fontSize: 22, color: "FFFFFF", align: "center", valign: "middle" });
+
+// ✅ CORRECT: Single element
+slide.addText("VS", {
+  x, y, w: 1, h: 1,
+  shape: pres.shapes.OVAL, fill: { color: "00868C" },
+  fontSize: 22, color: "FFFFFF", align: "center", valign: "middle",
+});
+```
+
+**Exception:** When ONE shape needs MULTIPLE independently positioned text blocks (e.g., card background with title + body at different y-positions), use `addText` with `shape`+`fill` for the first/main text, and plain `addText` for additional overlay texts. For thin decorative shapes without text (accent bars, separator lines), plain `addShape` is fine.
 
 ---
 
